@@ -1,60 +1,61 @@
-# Read Vue Source Code
+# Читая исходный код Vue
 
-## Why
+[Оригинальный текст: numbbbbb/read-vue-source-code](https://github.com/numbbbbb/read-vue-source-code) - by [@numbbbbb](https://github.com/numbbbbb)
 
-Imagine you find a new framework, let's say it's Vue. You Google the tutorials, build a HelloWorld project and start to use it in company projects.
+## Зачем?
 
-Now you are familiar with that framework, what should you do next?
+Представьте - вы нашли новый фреймворк, допустим это Vue. Вы гуглите туториалы, делаете на нем HelloWorld и начинаете использовать его на проектах в своей компании.
 
-There are several choices. But for me, I just want to see what's beneath the surface.
+И вот вы уже знакомы с фреймврком. Что делать дальше?
 
-How to implement the two-way binding?
+Есть несколько вариантов. мой - я хочу посмотреть, что находится под обложкой.
 
-How to design the lifecycle and what's the right time to call hooks?
+Как реализовать двусторонний биндинг (привязку данных) ?
 
-How to build such a big project?
+Как организовать жизненный цикл и когда следует вызывать хуки?
 
-What's the right way to test it?
+Как построить достаточно крупный проект?
 
-Why or why not to have that feature?
+Какой правильный способ все это тестировать?
 
-In order to answer those questions, I decided to read the source code. The best way to learn is to teach, so I write this series to show you how I read the code and what I gain from it.
+Почему стоит или не стоит заводить ту ли иную фичу?
 
-## How to Read This Series
+И чтобы ответить на все эти вопросы я решил прочитать исходный код. Лучший способ научиться - научить других. Так что я написал серию заметок, чтобы рассказать как я читал исходный код и что я из этого вынес.
 
-You can sit here and read, but I highly recommend you to try it by yourself. You need to get your hands dirty to really learn something.
+## Как читать этот материал?
 
-I will record the actions I take, like **download source code from xxx** and **jump to file xxx and find xxx**. You can replay them by yourself.
+Вы можете просто сесть и прочитать, но я настоятельно рекомендую попробовать сделать все самому. Вам нужно замарать свои руки, чтобы действительно чему-то научиться.
 
-In this series, I won't try to explain everything. My purpose is to help you understand Vue's structure and how it works. I will leave some functions or files for you to read in practice sections.
+Я буду описывать действия, которые я сделал в формате **скачайте исходный код с xxx** и **перейдите в файл xxx и найдите yyy**. Так, что вы сможете повторить все сами.
 
-If you have any questions and advice, feel free to contact with me! You can use issue as comment, or email me at *lj925184928@gmail.com*.
+В этой серии заметок я не пытаюсь объяснить все. Моя цель - помочь вам понять структуру Vue и как она работает. Я укажу какие функции или файлы вам стоит почитать в практической части.
 
-## Who This Series is For
+Если есть вопросы или советы - не стесняйтесь, пишите мне. Вы можете использовать issue для комментариев или писать мне на почту _lj925184928@gmail.com_.
 
-Everyone who is familiar with web frontend development can read this series. 
+## Для кого этот материал?
 
-If this is your first time reading source code, you can learn how to read them. 
+Любой, кто знаком с фронтенд разработкой может читать эти заметки.
 
-If you are a Vue user you can understand the daily used framework well. 
+Если это первый раз, когда вы читаете исходники - ваш шанс научиться это делать.
 
-If you have read the source code by yourself before, you can read it again from my point of view.
+Если вы используете Vue - Вы сможете понять свой фреймворк лучше.
 
-Exciting? Here we go!
+Если вы уже сами читали исходники раньше - вы сможете перечитать их и взглянуть на них с моей точки зрения.
 
-## Contents
+Вдохновились? Поехали.
 
-- [Find the Entry](https://github.com/numbbbbb/read-vue-source-code/blob/master/01-find-the-entry.md)
-- [Dig into the Core](https://github.com/numbbbbb/read-vue-source-code/blob/master/02-dig-into-the-core.md)
-- [Initialization](https://github.com/numbbbbb/read-vue-source-code/blob/master/03-init-introduction.md)
-- [Dynamic Data - Observer, Dep and Watcher](https://github.com/numbbbbb/read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md)
-- [Dynamic Data - Lazy, Sync and Queue](https://github.com/numbbbbb/read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md)
-- [View Rendering - Intruduction](https://github.com/numbbbbb/read-vue-source-code/blob/master/06-view-render-introduction.md)
-- [View Rendering - Compiler](https://github.com/numbbbbb/read-vue-source-code/blob/master/07-view-render-compiler.md)
-- [View Rendering - Patch](https://github.com/numbbbbb/read-vue-source-code/blob/master/08-view-render-patch.md)
-- [Conclusion](https://github.com/numbbbbb/read-vue-source-code/blob/master/09-conclusion.md)
+## Содержание
+
+- [Точка входа](https://github.com/vvscode/tr--read-vue-source-code/blob/master/01-find-the-entry.md)
+- [Глубже в ядро](https://github.com/vvscode/tr--read-vue-source-code/blob/master/02-dig-into-the-core.md)
+- [Инициализацияn](https://github.com/vvscode/tr--read-vue-source-code/blob/master/03-init-introduction.md)
+- [Изменяемые данные - Observer, Dep и Watcher](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md)
+- [Изменяемые данные - Lazy, Sync и Queue](https://github.com/vvscode/tr--read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md)
+- [Рендеринг - Введение](https://github.com/vvscode/tr--read-vue-source-code/blob/master/06-view-render-introduction.md)
+- [Рендеринг - Компилятор](https://github.com/vvscode/tr--read-vue-source-code/blob/master/07-view-render-compiler.md)
+- [Рендеринг - Обновление](https://github.com/vvscode/tr--read-vue-source-code/blob/master/08-view-render-patch.md)
+- [Заключение](https://github.com/vvscode/tr--read-vue-source-code/blob/master/09-conclusion.md)
 
 ## License
 
 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)
-
