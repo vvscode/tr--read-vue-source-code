@@ -1,42 +1,42 @@
-# Find the Entry
+# Ищем точку входа
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Эта статья - часть серии [Читая исходный код Vue](https://github.com/vvscode/tr--read-vue-source-code).
 
-In this article, we will:
+В этой части мы:
 
-- Get the code
-- Open your editor
-- Find the entry
+- Раздобудем код
+- Откроем редактор кода
+- Найдем точку входа для библиотеки
 
-## Get the Code
+## Получаем код
 
-You can read code using GitHub, but it's slow and hard to see the directory structure. So let's download the code first.
+Вы можете читать исходный код прямо на GitHub, но это медленно, к тому же неудобно смотреть на структуру папок (_На самом деле нет - [Octotree](https://github.com/ovity/octotree)_). Так что давайте для начала скачаем исходники.
 
-Open [Vue's GitHub page](https://github.com/vuejs/vue), click "Clone or download" button and then click "Download ZIP".
+Открываем [страницу Vue на GitHub](https://github.com/vuejs/vue), нажимаем на кнопку "Clone or download" и выбираем "Download ZIP".
 
 ![](http://i.imgur.com/Fshkk3Z.jpg)
 
-You can also use `git clone git@github.com:vuejs/vue.git` if you like using console.
+ВЫ так же можете использовать `git clone git@github.com:vuejs/vue.git` если вам нравится пользоваться консолью.
 
-> I use the latest dev code I can get, so it may have some differences with the code you download.
-> 
-> Don't worry, this series is aimed at telling you **how** to understand the source code. You can use the same methods even if the code is different.
-> 
-> You can also download [the version I use](https://github.com/numbbbbb/read-vue-source-code/blob/master/vue.zip) if you like.
+> Я использовал последнюю версию кода, которую смог раздобыть. Так что могут быть некоторые различия с кодом, который вы скачаете.
+>
+> Не переживаете - цель этой серии заметок рассказать вам **КАК** понимать исходный код. Вы можете использовать тот же подход если исходники отличаются.
+>
+> Так же вы можете скачать [версию, которую использовал я](https://github.com/vvscode/tr--read-vue-source-code/blob/master/vue.zip), если хотите.
 
-## Open Your Editor
+## Запускаем редактор кода
 
-I prefer to use Sublime Text, you can use your favorite editor.
+Я предпочитаю пользоваться Sublime Text, вы можете использовать свой любимый редактор.
 
-Open your editor, double click the zip file you downloaded and drag the folder to your editor.
+Открывайте ваш редактор, два раза кликайте на zip-файл, который вы скачала, и перетаскивайте папку с исходниками в ваш редактор.
 
 ![](http://i.imgur.com/WgediMc.jpg)
 
-## Find the Entry
+## Ищем точку входа
 
-Now we meet our first question: where should we start?
+И первый вопрос, который перед нами встает: откуда начинать?
 
-It's a common question for big open source projects. Vue is a npm package, so we can open `package.json` first.
+Это общий вопросы для больших проектов с открытым кодом. Vue - это npm пакет, так что мы можем для начала открыть `package.json`.
 
 ```json
 {
@@ -61,23 +61,23 @@ It's a common question for big open source projects. Vue is a npm package, so we
     ...
 ```
 
-First three keys are `name`, `version` and `description`, no need to explain.
+Первые три ключа - `name`, `version` и `description` не нуждаются в объяснении. Это имя, версия и описание пакета.
 
-There is a `dist/` in `main`, `module` and `unpkg`, that implies they are related to generated files. Since we are looking for the entry, just ignore them.
+В секциях `main`, `module`, `unpkg` находится `dist/`, что намекат на то, что секции содержат сгенерированные файлы. Мы ищем с чего начать, так что просто игнорируем их.
 
-Next is `typings`. After Googling, we know it's a TypeScript definition. We can see many type definitions in `types/index.d.ts`.
+Дальше идет секция `typings`. Немного погуглив мы понимаем, что это файлы объявлений для Typescript. Мы можем увидеть много объявлений типов в `types/index.d.ts`.
 
-Go on.
+Продолжаем.
 
-`files` contains three paths. First one is `src`, it's the source code directory. This narrows the range, but we still don't know which file to start with.
+`files` содержит три части. Первая - это `src`, директория с исходным кодом. Это сужает круг поисков, но мы все еще не знаем с какого файла начинать.
 
-Next key is `scripts`. Oh, the `dev` script! This command must know where to start.
+Следующий ключ - `scripts`. О, скрипт с названием `dev`. Это команда должна знать откуда начинать.
 
 ```
 rollup -w -c build/config.js --environment TARGET:web-full-dev
 ```
 
-Now we have `build/config.js` and `TARGET:web-full-dev`. Open `build/config.js` and search `web-full-dev`:
+И так у нас есть `build/config.js` и `TARGET:web-full-dev`. Открываем `build/config.js` и ищем `web-full-dev`:
 
 ```javascript
 // Runtime+compiler development build (Browser)
@@ -91,36 +91,38 @@ Now we have `build/config.js` and `TARGET:web-full-dev`. Open `build/config.js` 
 },
 ```
 
-Great! 
+Прекрасно!
 
-This is the config of dev building. It's entry is `web/entry-runtime-with-compiler.js`. But wait, where is the `web/` directory?
+Это конфиг для дев-сборки. Его входная точка это `web/entry-runtime-with-compiler.js`. Постойте, а где папка `web/`?
 
-Check the entry value again, there is a `resolve`. Search `resolve`:
+Проверим значение `entry` еще раз, Там есть `resolve`. Ищем `resolve`:
 
 ```javascript
-const aliases = require('./alias')
+const aliases = require('./alias');
 const resolve = p => {
-  const base = p.split('/')[0]
+  const base = p.split('/')[0];
   if (aliases[base]) {
-    return path.resolve(aliases[base], p.slice(base.length + 1))
+    return path.resolve(aliases[base], p.slice(base.length + 1));
   } else {
-    return path.resolve(__dirname, '../', p)
+    return path.resolve(__dirname, '../', p);
   }
-}
+};
 ```
 
+Тогда в строке `resolve('web/entry-runtime-with-compiler.js')` мы имеем следующее:
 
-Go through `resolve('web/entry-runtime-with-compiler.js')` with the parameters we have:
+- `p` это `web/entry-runtime-with-compiler.js`
+- `base` это `web`
+- преобразует в `alias['web']`
 
-- p is `web/entry-runtime-with-compiler.js`
-- base is `web`
-- convert the directory to `alias['web']`
-
-Let's jump to `alias` to find `alias['web']`.
+Перейдем к `alias` чтобы найти `alias['web']`.
 
 ```javascript
 module.exports = {
-  vue: path.resolve(__dirname, '../src/platforms/web/entry-runtime-with-compiler'),
+  vue: path.resolve(
+    __dirname,
+    '../src/platforms/web/entry-runtime-with-compiler',
+  ),
   compiler: path.resolve(__dirname, '../src/compiler'),
   core: path.resolve(__dirname, '../src/core'),
   shared: path.resolve(__dirname, '../src/shared'),
@@ -128,11 +130,11 @@ module.exports = {
   weex: path.resolve(__dirname, '../src/platforms/weex'),
   server: path.resolve(__dirname, '../src/server'),
   entries: path.resolve(__dirname, '../src/entries'),
-  sfc: path.resolve(__dirname, '../src/sfc')
-}
+  sfc: path.resolve(__dirname, '../src/sfc'),
+};
 ```
 
-Okay, it's `src/platforms/web`. Concat it with the input file name, we get `src/platforms/web/entry-runtime-with-compiler.js`.
+Супер, это `src/platforms/web`. Склеив с именем входного файла, мы получим `src/platforms/web/entry-runtime-with-compiler.js`.
 
 ```javascript
 /* @flow */
@@ -193,37 +195,35 @@ Vue.prototype.$mount = function (
   ...
 ```
 
-Cool! You have found the entry!
+Супер! Вы нашли точку входа!
 
-> Have you noticed the `/* flow */` comment at the top? After Google, we know it's a type checker. It reminds me of `typings`, I search again and find out that `flow` can use `typings` definitions to validate your code.
+> Вы заметили комментарий `/* flow */` в верху файла? Погуглив, мы узнаем, что это инструмент проверки типов. Это напомнило мне о `typings`, поискав снова выяснилось, что `flow` может использовать объявления `typings` для проверки вашего кода.
 
-> Maybe next time I can use `flow` and `typings` in my own project. You see, even if we haven't really started reading the code, we have learned some useful and practical things.
+> Возможно, в следующий раз я смогу использовать `flow` и `typings` в моем следующем проекте. Видите, мы еще даже не начали читать исходники, а уже узнали что-то полезное.
 
-Let's go through this file step-by-step:
+Пройдемся по файлу шаг за шагом:
 
-- import config
-- import some util functions
-- import Vue(What? Another Vue?)
-- define `idToTemplate`
-- define `getOuterHTML`
-- define `Vue.prototype.$mount` which use `idTotemplate` and `getOuterHTML`
-- define `Vue.compile`
+- импортировать конфиг
+- импортировать несколько вспомогательных функций
+- импортировать Vue(Что? Еще один Vue?)
+- определить `idToTemplate`
+- определить `getOuterHTML`
+- определить `Vue.prototype.$mount`, который использует `idTotemplate` и `getOuterHTML`
+- определить `Vue.compile`
 
-The two important points are:
+Два важных момента:
 
-1. This is **NOT** the real Vue code, we should know that from the filename, it's just an entry
-2. This file extracts the `$mount` function and defines a new `$mount`. After reading the new definition, we know it just add some validations before calling the real mount
+1. Это еще **НЕ** исходный код Vue, мы это должны понять из имени файла - это только точка входа.
+1. Этот файл извлекает функцию `$mount` и определяет новый `$mount`. Прочитав новое определение, мы поймем что оно просто добавляет пару проверок перед вызовом настоящего `mount`.
 
-## Next Step
+## Следующий шаг
 
-Now you know how to find the entry of a brand new project. In next article, we will go on to find the core code of Vue.
+Теперь вы знаеме, как найти точку входа в новом проекте. В следующей части мы продолжим искать основной код Vue.
 
-Read next chapter: [Dig into the Core](https://github.com/numbbbbb/read-vue-source-code/blob/master/02-dig-into-the-core.md).
+Читать следующую часть: [Глубже в ядро](https://github.com/vvscode/tr--read-vue-source-code/blob/master/02-dig-into-the-core.md).
 
-## Practice
+## Практика
 
-Remember those "util functions"? Read their codes and tell what they do. It's not difficult, but you need to be patient. 
+Помните те _"вспомогательные функции"_? Прочитайте их исходный код и скажите, что они делают. Это не сложно, но нужно быть внимательным.
 
-Don't miss `shouldDecodeNewlines`, you can see how they fight with IE.
-
-
+Не пропустите `shouldDecodeNewlines`, там можно увидеть как они борются с IE.
