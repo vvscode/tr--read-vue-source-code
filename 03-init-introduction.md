@@ -1,402 +1,400 @@
-# Init - Introduction
+# Инициализация - Введение
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Эта статья - часть серии [Читая исходный код Vue](https://github.com/vvscode/tr--read-vue-source-code).
 
-In this article, we will learn:
+В этой части мы:
 
-- What those mixins do
-- Understand the init process
+- Разберемся, что делают рассмотренные миксины
+- Поймем процесс инициализации
 
-## What those mixins do
+## Что делают миксины
 
-We are inside `src/core/instance/index.js` now.
+Итак, мы внутри `src/core/instance/index.js`.
 
 ```javascript
-import { initMixin } from './init'
-import { stateMixin } from './state'
-import { renderMixin } from './render'
-import { eventsMixin } from './events'
-import { lifecycleMixin } from './lifecycle'
-import { warn } from '../util/index'
+import { initMixin } from './init';
+import { stateMixin } from './state';
+import { renderMixin } from './render';
+import { eventsMixin } from './events';
+import { lifecycleMixin } from './lifecycle';
+import { warn } from '../util/index';
 
-function Vue (options) {
-  if (process.env.NODE_ENV !== 'production' &&
-    !(this instanceof Vue)
-  ) {
-    warn('Vue is a constructor and should be called with the `new` keyword')
+function Vue(options) {
+  if (process.env.NODE_ENV !== 'production' && !(this instanceof Vue)) {
+    warn('Vue is a constructor and should be called with the `new` keyword');
   }
-  this._init(options)
+  this._init(options);
 }
 
-initMixin(Vue)
-stateMixin(Vue)
-eventsMixin(Vue)
-lifecycleMixin(Vue)
-renderMixin(Vue)
+initMixin(Vue);
+stateMixin(Vue);
+eventsMixin(Vue);
+lifecycleMixin(Vue);
+renderMixin(Vue);
 
-export default Vue
+export default Vue;
 ```
 
-First, we will walk through those five mixins, find out what they do. Then we go into the `_init` function and see what happens when you execute `var app = new Vue({...})`.
+Для начала, пройдемся по этим 5 миксинам и разберемся, что они делают. После перейдем к функции `_init` и посмотрим, что происходит, когда мы выполняем строчку `var app = new Vue({...})`.
 
 ### initMixin
 
-Open `./init.js`, scroll to the bottom and read definitions.
+Откроем `./init.js`, проскролим вниз и прочитаем описания.
 
-This file defines:
+Этот файл определяет:
 
-- function `initMixin()`, it defines `Vue.prototype._init`, we will come back at next section
-- function `initInternalComponent()`, its comments implies that this function can speed up internal component instantiation because dynamic options merging is pretty slow
-- function `resolveConstructorOptions()`, it collects options
-- function `resolveModifiedOptions()`, this is related to [a bug](https://github.com/vuejs/vue/issues/4976). In short, it can let you modify or attach options during hot-reload
-- function `dedupe()`, used by `resolveModifiedOptions` to ensure lifecycle hooks won't be duplicated
+- функцию `initMixin()`, она добавляет `Vue.prototype._init`, вернемся к этому в следующей секции
+- функцию `initInternalComponent()`, комментарии говорят, что эта функция может ускорить внутренние механизмы создания компонентов, потому что динамическое склеивание параметров достаточно медленное
+- функцию `resolveConstructorOptions()`, которая занимается сбором параметров
+- функцию `resolveModifiedOptions()`, она относится к этому [багу](https://github.com/vuejs/vue/issues/4976). В кратце - это позволяет вам изменять или добавлять параметры при hot-reload.
+- функцию `dedupe()`, она используется в `resolveModifiedOptions`, чтобы избежать повторного вызова хуков жизненного цикла
 
 ### stateMixin
 
-Open `./state,js`, this is a long file, search `statemixin`.
+Откроем `./state,js`, и в этом большом файле поищем `statemixin`.
 
 ```javascript
-export function stateMixin (Vue: Class<Component>) {
+export function stateMixin(Vue: Class<Component>) {
   // flow somehow has problems with directly declared definition object
   // when using Object.defineProperty, so we have to procedurally build up
   // the object here.
-  const dataDef = {}
-  dataDef.get = function () { return this._data }
-  const propsDef = {}
-  propsDef.get = function () { return this._props }
+  const dataDef = {};
+  dataDef.get = function() {
+    return this._data;
+  };
+  const propsDef = {};
+  propsDef.get = function() {
+    return this._props;
+  };
   if (process.env.NODE_ENV !== 'production') {
-    dataDef.set = function (newData: Object) {
+    dataDef.set = function(newData: Object) {
       warn(
         'Avoid replacing instance root $data. ' +
-        'Use nested data properties instead.',
-        this
-      )
-    }
-    propsDef.set = function () {
-      warn(`$props is readonly.`, this)
-    }
+          'Use nested data properties instead.',
+        this,
+      );
+    };
+    propsDef.set = function() {
+      warn(`$props is readonly.`, this);
+    };
   }
-  Object.defineProperty(Vue.prototype, '$data', dataDef)
-  Object.defineProperty(Vue.prototype, '$props', propsDef)
+  Object.defineProperty(Vue.prototype, '$data', dataDef);
+  Object.defineProperty(Vue.prototype, '$props', propsDef);
 
-  Vue.prototype.$set = set
-  Vue.prototype.$delete = del
+  Vue.prototype.$set = set;
+  Vue.prototype.$delete = del;
 
-  Vue.prototype.$watch = function (
+  Vue.prototype.$watch = function(
     expOrFn: string | Function,
     cb: Function,
-    options?: Object
+    options?: Object,
   ): Function {
-    const vm: Component = this
-    options = options || {}
-    options.user = true
-    const watcher = new Watcher(vm, expOrFn, cb, options)
+    const vm: Component = this;
+    options = options || {};
+    options.user = true;
+    const watcher = new Watcher(vm, expOrFn, cb, options);
     if (options.immediate) {
-      cb.call(vm, watcher.value)
+      cb.call(vm, watcher.value);
     }
-    return function unwatchFn () {
-      watcher.teardown()
-    }
-  }
+    return function unwatchFn() {
+      watcher.teardown();
+    };
+  };
 }
 ```
 
-This function defines:
+Эта функция определяет:
 
-- `dataDef` and it's getter
-- `propsDef` and it's getter
-- setters for `dataDef` and `propsDef` if not built for production, which just log two warnings
-- `dataDef` to `Vue.prototype` as `$data`
-- `propsDef` to `Vue.prototype` as `$props`
-- `Vue.prototype.$set` and `Vue.prototype.$delete`
+- `dataDef` и его геттер
+- `propsDef` и его геттер
+- сеттер для `dataDef` и `propsDef`, если это не продакшн сборка, которые просто выводят два предупреждения в консоль
+- добавляет `dataDef` в `Vue.prototype` как `$data`
+- добавляет `propsDef` в `Vue.prototype` как `$props`
+- `Vue.prototype.$set` и `Vue.prototype.$delete`
 - `Vue.prototype.$watch`
 
-Sounds familiar? Yes, here we get `$data`, `$props`, `$set`, `$delete` and `$watch`. Read this file carefully, you can learn some coding skills and use them in your own projects.
+Звучит знакомо? Да, именно отсюда мы получаем `$data`, `$props`, `$set`, `$delete` и `$watch`. Внимательно прочитайте этот файл, вы можете научиться нескольким приемам и позже использовать их на собственных проектах.
 
-Have you noticed the `Watcher`? Seems like an important class! You are right, in later articles we will explain `Observer`, `Dep` and `Watcher`. They cooperate to implement data and view synchronization.
+Обратили внимание на `Watcher`? Похоже на важный класс. Вы правы, позже мы объясним `Observer`, `Dep` и `Watcher`. Их взаимодействие обеспечивает синхронизацию данных и представления.
 
 ### eventsMixin
 
-Open `./events.js` and search `eventsMixin`, it's too long to put the screenshot here, so read it by yourself.
+Откройте `./events.js` и найдите `eventsMixin`, она слишком длинная, чтобы приводить ее здесь, так что прочитайте ее самостоятельно.
 
-This function defines:
+Эта функция определяет:
 
 - `Vue.prototype.$on`
 - `Vue.prototype.$once`
 - `Vue.prototype.$off`
 - `Vue.prototype.$emit`
 
-You must have used them for many times, just read the code and learn how to implement event manipulation elegantly.
+Должно быть вы не раз пользовались этими вещами, просто прочитайте этот код и вы узнаете как элегантно оперировать событиями.
 
 ### lifecycleMixin
 
-Open `lifecycle.js`, scroll down to find `lifecycleMixin`.
+Откройте `lifecycle.js`, проскрольте вниз и найдите `lifecycleMixin`.
 
-This function dedines:
+Эта функция определяет:
 
-- `Vue.prototype._update()`, DOM updating happens here! Will be covered in later articles
+- `Vue.prototype._update()`, Здесь происходит обновление DOM! Мы разберемся с этим позже
 - `Vue.prototype.$forceUpdate()`
 - `Vue.prototype.$destroy()`
 
-Hey, what's that below `$destroy`? `mountComponent`! We have seen it before, it's the core of `$mount` and is wrapped twice.
+Эм, что это ниже `$destoy`? `mountComponent`! Мы уже видели это раньше, это `$mount` из ядра, который имеет две обертки.
 
-Keep going, we get several functions about the component. They are used in DOM updating, just ignore them now.
+Продолжаем, мы нашли несколько функций, относящихся к компоненту. Они используются для обновления DOM, можно их пока пропустить.
 
 ### renderMixin
 
-Open `./render.js`, it defines `Vue.prototype._render()` and some helpers. They will also appear in later articles, just keep in mind that we meet `_render` here.
+Откроем `./render.js`, там определяется `Vue.prototype._render()` и несколько вспомогательных фукнций. Они так же появятся в следующих частях, про себя отмечаем, что мы здесь встретили `_render`.
 
 ---
 
-Okay, so now we understand what those mixins do, they just set some functions to `Vue.prototype`.
+Итак, мы разобрались, что делают эти миксины. Они просто добавляют некоторые методы в `Vue.prototype`.
 
 ![](http://i.imgur.com/MhqgVXP.jpg)
 
+Здесь важный момент - как разделить и огранизовать кучу функций. На сколько частей вы бы разбили на месте автора? В какую часть попала бы каждая фукнция? Подумайте об этом с точки зрения автора, это интересно и полезно.
 
-The important thing here is how to divide and organize a bunch of functions. How many parts would you make if you are the author? Which part should one function go? Think from the point of author's view, it's very interesting and helpful.
+## Понимание процесса инициализации
 
-## Understand the init process
-
-After looking the static parts, now we go back to the core.
+После разбора статических частей вернемся назад к ядру.
 
 ```javascript
-function Vue (options) {
-  if (process.env.NODE_ENV !== 'production' &&
-    !(this instanceof Vue)
-  ) {
-    warn('Vue is a constructor and should be called with the `new` keyword')
+function Vue(options) {
+  if (process.env.NODE_ENV !== 'production' && !(this instanceof Vue)) {
+    warn('Vue is a constructor and should be called with the `new` keyword');
   }
-  this._init(options)
+  this._init(options);
 }
 ```
 
-Here we have a small demo from Vue's official document:
+В оффициальной документации есть небольшой пример:
 
 ```javascript
 var app = new Vue({
   el: '#app',
   data: {
-    message: 'Hello Vue!'
-  }
-})
+    message: 'Hello Vue!',
+  },
+});
 ```
 
-Now load them to your mind and let's begin the execution.
+Давате мысленно разберем что происходит при выполнении этого кода.
 
-First, we call `new Vue({...})`, which means:
+Для начала, мы вызваемl `new Vue({...})`, что означает
 
 ```javascript
 options = {
   el: '#app',
   data: {
-    message: 'Hello Vue!'
-  }
-}
+    message: 'Hello Vue!',
+  },
+};
 ```
 
-Then `this._init(options)`. Remember where `_init()` is defined? Yes, in `./init.js`, open it and read the function codes.
+Дальше `this._init(options)`. Помните где опделена `_init()`? Именно, в `./init.js`,откройте файл и прочитайте код функции.
 
-`_init()` do:
+`_init()` делает следующее:
 
-- set `_uid`
-- mark performance start tag 
-- set `_isVue`
-- set options
-- set `_renderProxy`. Proxy is used during development to show you more render information
-- set `_self`
-- call a bunch of init functions
-- mark performance end tag
-- call `$mount()` to update DOM
+- устанавливает `_uid`
+- Создает стартовую метку для измерения производительности
+- устанавливает `_isVue`
+- устанавливает параметры
+- устанавливает `_renderProxy`. Прокси используется при разработке, чтобы показывать вам больше информации об отрисовке
+- устанавливает `_self`
+- вызывает пачку фукнций для инициализации
+- создает конечную метку для измерения производительности
+- вызывает `$mount()` для обновления DOM
 
-Now we focus on those init functions.
+Теперь сфокусируемся на функциях инициализации.
 
 ```javascript
-initLifecycle(vm)
-initEvents(vm)
-initRender(vm)
-callHook(vm, 'beforeCreate')
-initInjections(vm) // resolve injections before data/props
-initState(vm)
-initProvide(vm) // resolve provide after data/props
-callHook(vm, 'created')
+initLifecycle(vm);
+initEvents(vm);
+initRender(vm);
+callHook(vm, 'beforeCreate');
+initInjections(vm); // resolve injections before data/props
+initState(vm);
+initProvide(vm); // resolve provide after data/props
+callHook(vm, 'created');
 ```
 
-`callHook()` is easy to understand, it just calls your hook functions. Next, we will explain the other six init functions in detail.
+`callHook()` как легко понять, просто вызывает ваши хуки. Дальше мы подробно рассмотрим остальные 6 функций.
 
 ### initLifecycle
 
-It's located in `./lifecycle`. 
+Она расположена в файле `./lifecycle`.
 
-This function connects this component with its parent, initializes some variables used in lifecycle methods.
+Эта функция соединяет компонент с его родетелем, инициализирует некоторые пемеренные, котороые используются в методах жизненного цикла.
 
 ### initEvents
 
-It's located in `./events.js`.
+Расположена в `./events.js`.
 
-This function initializes variables and updates them with its parent's listeners.
+Эта фукнция инициализирует переменные и обновляет их с учетом родительских подпискок.
 
 ### initRender
 
-It's located in `./render.js`.
+Расположена в `./render.js`.
 
-This function initializes `_vnode`, `_staticTrees` and some other variables and methods.
+Эта функция инициализируем `_vnode`, `_staticTrees` и некоторые другие переменные и методы.
 
-Here we meet VNode for the first time. 
+Тут мы встречаем `VNode` в первый раз.
 
-What is VNode? It's used to build the VDom. VNode and VDom correspond to real Node and DOM. The reason Vue chose these two representations is performance. 
+Что такое VNode? Эта штука используется для построение VDom (virtual DOM). VNode и VDom соотносятся с реальными Node и DOM. Vue использует эти две сущности для обеспечения высокой производительности.
 
-When your data change, Vue needs to update the webpage. The simplest way is refreshing the whole page. But it costs a lot of browser resources and much of them are just wasted. Normally you just update a few properties, why not just update the parts that change? Thus Vue adds a layer of VNode and VDom between data and view, implements an algorithm to calculate the best DOM manipulation strategy and apply that to the DOM.
+Когда данные изменяются, Vue должна обновить страницу. Самый простой способ - обновить все страницу. Но это дорого обходится браузеру и большая часть усилий тратится впустую. Обычно вы просто обновляете несколько свойств, почему бы просто не обновить те части, которые должны измениться? Поэтому Vue добавляет слой VNode и VDom между данными и представлением, который реализует алгоритм вычисления оптимальных измненений DOM и применяет его с странице.
 
-We will talk about render and update later.
+Мы еще поговорим о ренедеринге и обновлении позже.
 
 ### initInjections
 
-It's located in `./inject.js`.
+Расположена в `./inject.js`.
 
-This function is short and simple, it just resolves the injections in options and set them to your component.
+Эта функция короткая и простая, она просто находит все что определяется параметрами и добавляет это в ваш компонент.
 
-But wait, what's that, is it `defineProperty`? No, it's `defineReactive`. The word `reactive` must remind you of something, Vue can update view automatically while data change, maybe we can find something related to that inside this function, let's go.
+Постойте, что это? Это `defineProperty` ? Нет, это `defineReactive`. Слово `reactive` должно напомнить вам кое о чем. Vue может обновлять представление автоматически при изменении данных, возможжно мы можем найти что-то подходящее внутри этой функции. Давайте попробуем.
 
-Open `../observer/index.js` and search `defineReactive`.
+Откроем `../observer/index.js` и найдем `defineReactive`.
 
-This function first defines `const dep = new Dep()`, does some validation, then extracts the getter and setter.
+В этой фукнции определяется `const dep = new Dep()`, делаются кое-какие проверки, а потом экспортируется геттер и сеттер..
 
 ```javascript
-let childOb = observe(val) // <-- IMPORTANT
+let childOb = observe(val); // <-- ВАЖНО
 Object.defineProperty(obj, key, {
   enumerable: true,
   configurable: true,
-  get: function reactiveGetter () {
-    const value = getter ? getter.call(obj) : val
+  get: function reactiveGetter() {
+    const value = getter ? getter.call(obj) : val;
     if (Dep.target) {
-      dep.depend() // <-- IMPORTANT
+      dep.depend(); // <-- ВАЖНО
       if (childOb) {
-        childOb.dep.depend() // <-- IMPORTANT
+        childOb.dep.depend(); // <-- ВАЖНО
       }
       if (Array.isArray(value)) {
-        dependArray(value)
+        dependArray(value);
       }
     }
-    return value
+    return value;
   },
-  set: function reactiveSetter (newVal) {
-    const value = getter ? getter.call(obj) : val
+  set: function reactiveSetter(newVal) {
+    const value = getter ? getter.call(obj) : val;
     /* eslint-disable no-self-compare */
     if (newVal === value || (newVal !== newVal && value !== value)) {
-      return
+      return;
     }
     /* eslint-enable no-self-compare */
     if (process.env.NODE_ENV !== 'production' && customSetter) {
-      customSetter()
+      customSetter();
     }
     if (setter) {
-      setter.call(obj, newVal)
+      setter.call(obj, newVal);
     } else {
-      val = newVal
+      val = newVal;
     }
-    childOb = observe(newVal) // <-- IMPORTANT
-    dep.notify() // <-- IMPORTANT
-  }
-})
+    childOb = observe(newVal); // <-- ВАЖНО
+    dep.notify(); // <-- ВАЖНО
+  },
+});
 ```
 
-Next it defines `childOb = observe(val)`, set a new property to our component.
+Дальше она определяет `childOb = observe(val)` и устанавливает новое свойство в компонент.
 
-I have marked the key parts in comment. Even if you haven't read the related code, you can tell how Vue do view updating while data changes. It just wraps value with getter and setter inside which it constructs dependency and sends notify.
+Я поменил ключевые места комментариями. Даже если вы не читали соответствующий код, вы можете сказать как Vue обновляет представление при изменении данных. Она просто оборачивает значение с помощью геттера и серттера, внутри которого создает зависимости и отправляет уведомления об изменении.
 
-This `defineReactive` function is used in many places, not only in initInjections, we will talk about `Observer`, `Dep` and `Watcher` in later articles, just go back to our initialization and go on.
+Функция `defineReactive` используется во многих местах, не только в `initInjections`, мы еще поговорим про `Observer`, `Dep` и `Watcher` в следующих частях, пока даватей вернемся к нашей инициализации.
 
 ### initState
 
-It's located in `./state.js`.
+Расположена в `./state.js`.
 
 ```javascript
-export function initState (vm: Component) {
-  vm._watchers = []
-  const opts = vm.$options
-  if (opts.props) initProps(vm, opts.props)
-  if (opts.methods) initMethods(vm, opts.methods)
+export function initState(vm: Component) {
+  vm._watchers = [];
+  const opts = vm.$options;
+  if (opts.props) initProps(vm, opts.props);
+  if (opts.methods) initMethods(vm, opts.methods);
   if (opts.data) {
-    initData(vm)
+    initData(vm);
   } else {
-    observe(vm._data = {}, true /* asRootData */)
+    observe((vm._data = {}), true /* asRootData */);
   }
-  if (opts.computed) initComputed(vm, opts.computed)
-  if (opts.watch) initWatch(vm, opts.watch)
+  if (opts.computed) initComputed(vm, opts.computed);
+  if (opts.watch) initWatch(vm, opts.watch);
 }
 ```
 
-Old friends again. Here we get our props, methods, data, computed properties and watch functions. Let's check them one by one.
+Снова старые знакомые. Тут мы получаем наши свойства, методы, данные, вычисляемые свойства и наблюдатели. Давайте пройдемся по ним.
 
 #### initProps
 
-Do some validations and use `defineReactive` to wrap props and set them to the component.
+Делает некоторые проверки и использует `defineReactive` чтобы обернуть свойства и засунуть их в копонент.
 
 #### initMethods
 
-Just set methods to the component.
+Просто записывает методы в компонент.
 
 #### initData
 
-More validations, but here it uses `proxy` to set data, search `proxy` and read it, you know it will proxy operations like `this.name` to `this._data['name']`. 
+Снова проверки, но тут исползуется `proxy` для установки данных. Поищете и почитайте `proxy`, и вы узнаете, что он просто пробрасывает обращения к `this.name` в `this._data['name']`.
 
-At the end, this function calls `observe(data, true) /* asRootData */`. We will talk about Observer in later articles, here I just want to explain that `true`. Each observed object has a property called `vmCount` which means how many components use this object as root data. If you call `observe` with `true`, it will call `vmCount++`. The default value of `vmCount` is `0`.
+Наконец эта фукнция вызывает `observe(data, true) /* asRootData */`. Мы будем рассматривать Observer дальше, тут я просто хочу пояснить вот это `true`. Какждый наблюдаемый объект имеет свойство с названием `vmCount`, которое означает сколько компонентов используют этот объект как источник данных. Если вы вызываете `observe` с `true` - он выполнит `vmCall++`. Значение по-умолчанию для этого поля - `0`.
 
-Maybe this property will be used in other process, but after a global search, I just find Vue uses it as a sign for root data. If `ob && ob.vmCount`, this object must be a root data.
+Возможно это свойство будет использовано в дальнейших операциях, но поискав по проекту, я обнаружил, что Vue использует его только чтобы пометить источник данных. Если `obj && obj.vmCount` - этот объект используется для чтения данных из него.
 
 #### initComputed
 
-This function first extracts the function you put in as a getter, then creates a Watcher with it and store in `watchers` array. Finally, it calls `defineComputed` to set this computed property to the component.
+Эта функция прежде всего экспортирует фукнцию, которую мы используем как геттер. После она создает Watcher (наблюдатель) с этим геттером и сохраняет его в массиве `watchers`. В конце она вызывает `defineComputed`, чтобы записать вычисляемое свойство в компонент.
 
-You can guess what the name Watcher means, but we will leave it to later articles.
+По названию вы можете догадаться, что далают Watcher'ы, но мы их оставим на будущее.
 
 #### initWatch
 
-This function creates watcher for each input uses `createWatcher()`. `createWatcher()` calls `vm.$watch()` which is defined in `stateMixin`. Scroll to the end to see it. `vm.$watch()` will create Watcher and...What?! It may call `createWatcher()` again! What the hell is it doing?
+Эта фукнция создает наблюдатель за каждым входным параметром, используя `createWatcher()`. `createWatcher()` вызывает `vm.$watch()`, который определен внутри `stateMixin`. Проскролив вниз чтобы найти это. `vm.$watch()` создаст Watcher и ... Что? Она может вызывать `createWatcher()` снова. Что за чертовщина?
 
-Read it carefully, if `cb` is plain object, `$watch()` will call `createWatcher()`. And inside `createWatcher()`, it will extract options and handler if the handler(in `$watch()` it's named `cb`) is plain object. Alright, `$watch()` just through it back because he doesn't want to do extra jobs.
+Читаем внимательно, если `cb` это обычный объект, `$watch()` вызовет `createWatcher()`. А внутри `createWatcher()` она извлечет параметры и обработчик если обработчик (внутри `$watch` он называется `cb`) это обычный объект. Хорошо, `$watch()` просто отбросит его, потому что не собирается делать лишнюю работу.
 
 ### initProvider
 
-It's located also in `./inject.js`.
+Расположена в `./inject.js`.
 
-This function extracts providers in options and calls them on the component.
+Эта фукнция извлекает провайдеры из параметров и вызывает их на компоненте.
 
-Have you noticed the comments after `initInjections` and `initProvider`? It says:
+ОБратили внимание на комментарии после `initInjections` и `initProvider`? В них говорится:
 
 ```javascript
-initInjections(vm) // resolve injections before data/props
-initState(vm)
-initProvide(vm) // resolve provide after data/props
+initInjections(vm); // Разрешить внедренные зависимости до  data/props
+initState(vm);
+initProvide(vm); // Разрешить  провайдер после data/props
 ```
 
-Why do they have this order? I'll let you answer this.
+Почему в таком порядке? Я позже отвечу на этот вопрос.
 
 ---
 
-That's all. Hard to remember all inits? I made a picture for you:
+Вот и все. Сложно запомнить весь процесс инициализации? Вот картинка специально для вас:
 
 ![](http://i.imgur.com/DImNrXn.jpg)
 
-This article is a little long and contains many details. Init process is the basement of later articles, so make sure you have understood all contents.
+Эта часть немного длинная и в ней много деталей. Процесс инициализации это основа для последующих частей, так что убедитесь, что вы поняли все написанное.
 
-I'm not intend to tell you everything, so I suggest you read the whole init process again and go into the implementation of unfamiliar functions to see how they work.
+Я не собираюсь рассказывать вам все, так что советую вам перечитать весь процесс инициализации снова и заглянуть в реализацию незнакомых фукнций, чтобы знать как они работают.
 
-## Next Step
+## Следующий шаг
 
-This article shows the whole initialization process. After initialization, data can be modified, views will also sync with data. How does Vue implement the data updating process? Next article will reveal it.
+Эта часть рассказала про процесс инициализации. После инициализации данные могут изменяться, представляения будут синхронизированы с данными. Как Vue реализует процесс обновления? В следующей части мы это разберем.
 
-Read next chapter: [Dynamic Data - Observer, Dep and Watcher](https://github.com/numbbbbb/read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md).
+Читать следующую часть: [[Изменяемые данные - Observer, Dep и Watcher](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md).
 
-## Practice
+## Практика
 
 ```javascript
-initInjections(vm) // resolve injections before data/props
-initState(vm)
-initProvide(vm) // resolve provide after data/props
+initInjections(vm); // resolve injections before data/props
+initState(vm);
+initProvide(vm); // resolve provide after data/props
 ```
 
-Why do they have this order? I'll let you answer this.
+Почему именно в таком порядке? Я позже отвечу.
 
-Hint: think from another side, what will happen if you change their order?
-
+Подсказка: подумайте с другой стороны - что если изменить порядок этих строчек?

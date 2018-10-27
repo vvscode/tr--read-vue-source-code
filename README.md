@@ -48,7 +48,7 @@
 
 - [Точка входа](https://github.com/vvscode/tr--read-vue-source-code/blob/master/01-find-the-entry.md)
 - [Глубже в ядро](https://github.com/vvscode/tr--read-vue-source-code/blob/master/02-dig-into-the-core.md)
-- [Инициализацияn](https://github.com/vvscode/tr--read-vue-source-code/blob/master/03-init-introduction.md)
+- [Инициализация](https://github.com/vvscode/tr--read-vue-source-code/blob/master/03-init-introduction.md)
 - [Изменяемые данные - Observer, Dep и Watcher](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md)
 - [Изменяемые данные - Lazy, Sync и Queue](https://github.com/vvscode/tr--read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md)
 - [Рендеринг - Введение](https://github.com/vvscode/tr--read-vue-source-code/blob/master/06-view-render-introduction.md)
