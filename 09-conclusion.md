@@ -1,26 +1,25 @@
-# Conclusion
+# Заключение
 
-No more code, no more algorithms, just some words I want to say.
+Больше никакого кода, никаких алгоритмов, просто пару слов напоследок.
 
-This is the first time I write a source code series articles. And this is even the first time I write in English.
+Это первый раз, когда я пишу серию статей по мотивам исходного кода. И это первый раз, когда я пишу на английском.
 
-I have used Vue in most of my projects and I really love it. I know many developers want to read the source code, but after downloading and open the project, they are stuck.
+Я использовал Vue в большинстве своих проектов, и он мне правда нравится. Я знаю много разработчиков, которые хотели бы читать исходники, но после скачивания проекта они застревают на месте.
 
-Where should I start? This is a common question, it also bothering me for a long time. So after I found the right way to start and keep going on, I decided to write a series article to record it.
+Откуда я должен начать? Это общий вопросы, он так же долгое время беспокоил и меня. Так что, после того как я нашел правильный способ начать я продолжил, я решил написать серию статей чтобы это записать.
 
-After you find the entry and start to read the code, another question appears. It's hard to understand author's purpose.
+После того, как вы нашли точку входа и начали читать исходный код возникает другой вопрос. Не так то просто понять цель авторов.
 
-`dep.depend()`. What's `dep`? Why it's called here? What does it do?
+`dep.depend()`. Что такое `dep`? Зачем это здесь вызывается? Что это делает?
 
-You can understand each single line, but it's hard to understand how to organize them and how they cooperate with others.
+Вы можете понимать каждую линию по-отдельности, но сложно понять как они организованы и как они взаимодействуют с другими.
 
-Sometimes I feel like I'm reading a detective novel. The author shows you many things, you have to combine them and figure out the author's purpose. It's a kind of reverse engineering, you read what the author writes, and you want to find out what he thinks when he was writing.
+Иногда я чувствую себя, будто читаю детектив. Автор показывает много вешей и ты должен соеденить их, чтобы понять задумку автора. Это своего рода реверс-инжениринг (обратная разрабтка), когда ты читаешь, что написал автор и хочешь найти о чем он думал, когда писал.
 
-You will be stuck many times, but after you understand the code, you will feel satisfied. It's hard to remember what you are taught, but it's easy to remember what you figure out by yourself. That's the real learning.
+Вы будете застревать множество раз, но поняв код, по почувствуете удовлетворение. Бывает сложно вспомнить то, что ты выучил, но легко вспомнить то, до чего ты сам додумался. Это настоящее обучение.
 
-In short, I hope to show you **how to read the source code**. The most important thing is the methods and skills I used, not the explanation I said.
+Короче, я надеюсь, что показал вам **как читать исходный код**. Самая важная вещь - это методы и навыки, которыя использовал, а не объяснение, как я уже говорил.
 
-Finally, hopes this series can be useful to you. And if you find some mistakes, feel free to give me a feedback.
+Наконец, надеюсь, что эта серия была полезной для вас. Если вы найдете какие-то ошибки - не стесняйтесь сообщать об этом.
 
-Thank you.
-
+Спасибо.
