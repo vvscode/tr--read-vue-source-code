@@ -1,89 +1,87 @@
-# Dynamic Data - Observer, Dep and Watcher
+# Изменяемые данные - Observer, Dep и Watcher
 
+Эта статья - часть серии [Читая исходный код Vue](https://github.com/vvscode/tr--read-vue-source-code).
 
-
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
-
-In this article, we will learn:
+В этой части мы разберем что такое:
 
 - Observer
 - Dep
 - Watcher
-- How they cooperate
+- Как они взаимодествуют
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/03-init-introduction.md), we have learned how Vue does the initialization. After init, many interesting things happen.
+В [прошлой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/03-init-introduction.md), мы разобрали как приосходит инициализация Vue. После инициализации происходит еще много интересных штук.
 
-For example, if you change one of your properties `name`, then your webpage is automatically updated with the new value.
+Например, если вы изменяете одно из ваших свойств `name`, ваша страница автоматически обновляется в соответсвии с новым значением.
 
-How to implement that? You will see in this article.
+Как такое реализовать? Это вы узнаете из этой части.
 
-I won't give you the entire structure now, cause I want to show you how I build that through reading source code.
+Я не планирую привести всю структуру здесь, потому что я собираюсь показать вам как я разбирался с этим, читая исходный код.
 
 ## Observer
 
-In the previous article, we have seen `defineReactive` which is used to make a property `reactive`. Let's see its usage in `defineReactive()`.
+В прошлой статье мы видели `defineREactive`, которая использовался длс создания свойства `reactive`. Давайте взглянем на ее использование в `defineReactive`.
 
 ```javascript
 /**
- * Define a reactive property on an Object.
+ * Определенеие реактивного свойства в объекте
  */
-export function defineReactive (
+export function defineReactive(
   obj: Object,
   key: string,
   val: any,
-  customSetter?: Function
+  customSetter?: Function,
 ) {
-  const dep = new Dep()
+  const dep = new Dep();
 
-  const property = Object.getOwnPropertyDescriptor(obj, key)
+  const property = Object.getOwnPropertyDescriptor(obj, key);
   if (property && property.configurable === false) {
-    return
+    return;
   }
 
-  // cater for pre-defined getter/setters
-  const getter = property && property.get
-  const setter = property && property.set
+  // примем во внимание предопределенные getter/setters
+  const getter = property && property.get;
+  const setter = property && property.set;
 
-  let childOb = observe(val)  // <-- IMPORTANT
+  let childOb = observe(val); // <-- ВАЖНО
   Object.defineProperty(obj, key, {
     enumerable: true,
     configurable: true,
-    get: function reactiveGetter () {
-      const value = getter ? getter.call(obj) : val
+    get: function reactiveGetter() {
+      const value = getter ? getter.call(obj) : val;
       if (Dep.target) {
-        dep.depend() // <-- IMPORTANT
+        dep.depend(); // <-- ВАЖНО
         if (childOb) {
-          childOb.dep.depend() // <-- IMPORTANT
+          childOb.dep.depend(); // <-- ВАЖНО
         }
         if (Array.isArray(value)) {
-          dependArray(value) // <-- IMPORTANT
+          dependArray(value); // <-- ВАЖНО
         }
       }
-      return value
+      return value;
     },
-    set: function reactiveSetter (newVal) {
-      const value = getter ? getter.call(obj) : val
+    set: function reactiveSetter(newVal) {
+      const value = getter ? getter.call(obj) : val;
       /* eslint-disable no-self-compare */
       if (newVal === value || (newVal !== newVal && value !== value)) {
-        return
+        return;
       }
       /* eslint-enable no-self-compare */
       if (process.env.NODE_ENV !== 'production' && customSetter) {
-        customSetter()
+        customSetter();
       }
       if (setter) {
-        setter.call(obj, newVal)
+        setter.call(obj, newVal);
       } else {
-        val = newVal
+        val = newVal;
       }
-      childOb = observe(newVal) // <-- IMPORTANT
-      dep.notify() // <-- IMPORTANT
-    }
-  })
+      childOb = observe(newVal); // <-- ВАЖНО
+      dep.notify(); // <-- ВАЖНО
+    },
+  });
 }
 ```
 
-Here are the key points:
+Тут два важных момента:
 
 ```javascript
 const dep = new Dep()
@@ -93,29 +91,29 @@ let childOb = observe(val)
   dep.depend()
   childOb.dep.depend()
   dependArray(value)
-  
+
 ...
   childOb = observe(newVal)
   dep.notify()
 ```
 
-Here we meet `Dep`, `observe()`, `dependArray()`, `depend()` and `notify()`.
+Здесь мы встречаем `Dep`, `observe()`, `dependArray()`, `depend()` и `notify()`.
 
-It's clear that `observe()` and `dependArray()` are helpers, let's read them first.
+Понятно, что `observe()` и `dependArray()` это вспомогательные функции, для начала прочитаем их.
 
 ```javascript
 /**
- * Attempt to create an observer instance for a value,
- * returns the new observer if successfully observed,
- * or the existing observer if the value already has one.
+ * Попытаемся создать экземпляр observer (наблюдателя) для значения,
+ * вернем новый экземпляр обсервера при успехе,
+ * или существующий обсвервер если он уже есть для значения
  */
-export function observe (value: any, asRootData: ?boolean): Observer | void {
+export function observe(value: any, asRootData: ?boolean): Observer | void {
   if (!isObject(value)) {
-    return
+    return;
   }
-  let ob: Observer | void
+  let ob: Observer | void;
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
-    ob = value.__ob__
+    ob = value.__ob__;
   } else if (
     observerState.shouldConvert &&
     !isServerRendering() &&
@@ -123,109 +121,108 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
     Object.isExtensible(value) &&
     !value._isVue
   ) {
-    ob = new Observer(value)
+    ob = new Observer(value);
   }
   if (asRootData && ob) {
-    ob.vmCount++
+    ob.vmCount++;
   }
-  return ob
+  return ob;
 }
 ```
 
-`observe()` will extract the exist observer or create a new one with `new Observer(value)`. Notice that observe only works for an object, primitive value won't be observed.
+`observe()` извлекает существующий обсвервер или создает новый с помощью `new Observer(value)`. Обратите внимание, что обсерверы работают только для объектов, примитивные значения не могут обабатываться таким образом.
 
-If this value is used as root data, it will increments `ob.vmCount++`, we have talked about that in init process.
+Если значения используется как источних данных, оно увеличит `ob.vmCount`, о котором мы говорили в процессе инициализации.
 
-Okay, now we have got or created the watcher. Next, `dependArray()`.
+Ладно, теперь мы получили или создали наблюдатель. Дальше - `dependArray()`.
 
 ```javascript
 /**
- * Collect dependencies on array elements when the array is touched, since
- * we cannot intercept array element access like property getters.
+ * Соберем зависимости от элементов массива, когда встретим массив, потому что
+ * мы не можем перехватывать доступ к элементам массива, как в случае
+ * с геттерами/сеттерами
  */
-function dependArray (value: Array<any>) {
+function dependArray(value: Array<any>) {
   for (let e, i = 0, l = value.length; i < l; i++) {
-    e = value[i]
-    e && e.__ob__ && e.__ob__.dep.depend()
+    e = value[i];
+    e && e.__ob__ && e.__ob__.dep.depend();
     if (Array.isArray(e)) {
-      dependArray(e)
+      dependArray(e);
     }
   }
 }
 ```
 
-It just iterates the array recursively and calls `e.__ob__.dep.depend()` which leads us to `depend()` again.
+Все что он делает - рекурсивно проходит по массиву и вызывает `e.__ob__.dep.depend()`, который снова нас приводит к `depend()`.
 
-So now we have found the usage of `Dep()`, `Observer()`, `Watcher()`. And `dep.depend()`, `dep.notify()`.
+Итак, мы нашли использование `Dep()`, `Observer()`, `Watcher()`. И `dep.depend()`, `dep.notify()`.
 
-If you use `defineReactive()` to convert a property, that reactive property has one `dep` and one `childOb` set by `observe(val)` if the value is object.
+Если вы используете `defineReactive()` для преобразования свойства, это реактивное свойство получает `dep` и `childOb` устанавливаемые с помощью `observe(val)`, если значение является объектом.
 
-Let's read `Observer()` now.
+Теперь давате прочитаем `Observer()`.
 
 ```javascript
 /**
- * Observer class that are attached to each observed
- * object. Once attached, the observer converts target
- * object's property keys into getter/setters that
- * collect dependencies and dispatches updates.
+ * Observer - класс, который подключается к каждому наблюдаемому объекту
+ * При подключении обсервер преобразует свойства целевого объекта
+ * (используя существующие ключи) в геттеры и сеттеры,
+ * которые собирают зависимости и сообщают об изменениях
  */
 export class Observer {
   value: any;
   dep: Dep;
-  vmCount: number; // number of vms that has this object as root $data
+  vmCount: number; // колличество представлений, которые используют этот объект как испточник для  $data
 
-  constructor (value: any) {
-    this.value = value
-    this.dep = new Dep()
-    this.vmCount = 0
-    def(value, '__ob__', this)
+  constructor(value: any) {
+    this.value = value;
+    this.dep = new Dep();
+    this.vmCount = 0;
+    def(value, '__ob__', this);
     if (Array.isArray(value)) {
-      const augment = hasProto
-        ? protoAugment
-        : copyAugment
-      augment(value, arrayMethods, arrayKeys)
-      this.observeArray(value)
+      const augment = hasProto ? protoAugment : copyAugment;
+      augment(value, arrayMethods, arrayKeys);
+      this.observeArray(value);
     } else {
-      this.walk(value)
+      this.walk(value);
     }
   }
 
   /**
-   * Walk through each property and convert them into
-   * getter/setters. This method should only be called when
-   * value type is Object.
+   * Проходим по всем свойствам и превращаем их в геттеры/сеттеры
+   * Этот метод должен быть вызыван только
+   * когда значение свойства это объект
    */
-  walk (obj: Object) {
-    const keys = Object.keys(obj)
+  walk(obj: Object) {
+    const keys = Object.keys(obj);
     for (let i = 0; i < keys.length; i++) {
-      defineReactive(obj, keys[i], obj[keys[i]])
+      defineReactive(obj, keys[i], obj[keys[i]]);
     }
   }
 
   /**
-   * Observe a list of Array items.
+   * Наблюдение за списком объектов
    */
-  observeArray (items: Array<any>) {
+  observeArray(items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
-      observe(items[i])
+      observe(items[i]);
     }
   }
 }
 ```
 
-It first defines a `__ob__` property to the value you pass in. 
+В первую очередь она определеяет свойство `__ob__` для передаваемого значения.
 
-Then if the value is an array, it will intercept array methods(like `push`, `pop`) to make sure Vue can detect array manipulation. After that, it calls `observeArray()` which will iterates items and call `observe()`.
+Если значение это массив - он переопределит методы массива (вроде `push`, `pop`), чтобы обеспечить Vue возможность опеределять изменения массива. После этого она вызовет `observeArray()`, которая проитерируется по элементам и вызовет `observe()`.
 
-If the value is not an array, this function just walks through all keys and use `defineReactive()` to convert all values into a reactive property.
+Если значение не является массивом, этам фукнция просто пройдется по всем ключам и использует `defineReactive()`, чтобы преобразовать все значения в реактивные свойства.
 
-As you can see, `defineReactive()` calls `new Observer()`, `Observer()` may also call `defineReactive()`. Thus, when you want to convert a property with `defineReactive()`, it will recursively converts all sub properties into reactive property.
+Как видите, `defineReactive()` вызывает `new Observer()`, `Observer()` может так же вызывать `defineREactive()`. Таким образом, когда вы хотите преобразовать свойство с помощью `defineReactive()`, она рекурсивно преобразует все вложенные свойства в реактивные.
 
-**To be clear, we use `defineReactive()` to create reactive PROPERTY, and we use `observe()` to create Observer for the VALUE of that PROPERTY(if the value is object).**
+**Чтобы прояснить - мы используем `defineREactive` для создания реактивных СВОЙСТВ, и используем `observe()` для создания Observer (Наблюдателей) за ЗНАЧЕНИЕМ этого СВОЙСТВА (если значение это объект)**
 
-The reason is simple. If the value is an object, change the property of that object won't trigger the setter of property. Property only save the reference to that object in memory, change the content of that object won't affect it's memory address, thus won't really change the property's value.
+Причина простая. Если значение объект - изменение свойства этого объекта не вызовет сеттер этого свойства. Свойство просто хранит ссылку на объект в памяти, изменение полей этого объекта не влияет на адрес этого объекта, так что на самом деле значение свойства не меняется.
 
-If we have a `data` like this:
+Если у нас есть `data` вроде:
 
 ```javascript
 data: {
@@ -237,17 +234,17 @@ data: {
 }
 ```
 
-After calling `defineReactive(vm._data)`, we got this:
+При вызове `defineReactive(vm._data)` мы получим:
 
 ![](https://i.imgur.com/TM5j5GL.jpg)
 
-Give yourself some time to fully understand it.
+Сделайте небольшую паузу, чтобы полностью это понять.
 
-Our next target is `Dep()`.
+Следующая цель - `Dep()`.
 
 ## Dep
 
-Open `./dep.js`, you can see this class has only four methods.
+Откройте `./dep.js`, видим, что у класса всего 4 метода.
 
 ```javascript
 addSub (sub: Watcher) {
@@ -273,29 +270,29 @@ notify () {
 }
 ```
 
-`addSub()`, `removeSub()` and `notify()` deal with watchers. Each `Dep` instance has an array to store its watchers and tell them to `update()` during `notify()`. We have seen that `notify()` will be called in a setter, so if you change a reactive property, it will trigger watchers' updating.
+`addSub()`, `removeSub()` и `notify()` имеют дело с наблюдателями. Каждый экземпляр `Dep` имеет массив, для хранения наблюдателей и сообщаем им об `update()` при `notify()`. Мы видим, что этот `notify()` вызывается из сеттера, так что, когда вы изменяете реактивное свойство она вызовет обновление всех наблюдателей.
 
-`depend()` is strange, it first checks `Dep.target`, if it exists, call `Dep.target.addDep(this)`. What is `Dep.target`?
+`depend()` немного странная, сначала она проверяет `Dep.target`, и если свойство существует, вызывает `Dep.target.addDep(this)`. Что такое `Dep.target`?
 
-In the comments below this class, we can learn that `Dep.target` is globally unique. It's the watcher being evaluated now.
+В коментариях под этим классом мы можем узнать, что `Dep.targe` - уникальное в глобальном контексте. И тут вызвается его наблюдатель.
 
-Next to it are two functions for stack operations. It's easy to understand if one watcher wants to get another watcher's value during evaluation, we need to store current target, switch to the new target and come back after it finishes.
+Дальше идут две фукнции для операций со стеком. Легко понять, что если они наблюдатель хочет в процессе выполнения получить значение друогого наблюдателя, то нам нужно хранить текущую цель, чтобы переключиться на новую и назад.
 
-`Dep.target` must be a watcher, so `Dep.target.addDep(this)` inside `depend()` tells us watcher has a method named `addDep()`. Its name implies that each watcher also has a list of `Dep`s it's watching.
+`Deep.target` должен быть наблюдателем, так что `Dep.target.addDep(this)` внутри `depend()`, говорит, что у наблюдателя есть метод с названием `addDep()`. Это имя намикает, что каждый налюдатель также имеет список `Dep`, которые за ним следят.
 
-Let's turn to watcher now.
+Вернемся назад к наблюдателям.
 
 ## Watcher
 
-Open `./watcher.js`, it's a little long but...hey, we are right, Watcher has the list to store it's `Dep`s.
+Открываем `./watcher.js`, он достаточно маленький, но...ладно, мы были правы, Watcher имеет список, в котором хранит все свои `Dep`.
 
-The `constructor` simply initials some variables, set your computed function or watch expression to `this.getter` and try to get the value if it's not lazy.
+`constructor` просто инициализирует некоторые переменные, засовывает вычиляемые функции или выражения наблюдателей в `this.getter` и пытается получить значение, если речь не о ленивом свойстве.
 
-Let's go on with `get()`, this is the only thing we get from `constructor()`.
+Давайте перейдем к `get()`, единственное что вызывается из `constructor()`.
 
 ```javascript
 /**
- * Evaluate the getter, and re-collect dependencies.
+ * Выполняет геетер, и пересобирает зависимости.
  */
 get () {
   pushTarget(this)
@@ -310,8 +307,8 @@ get () {
   } else {
     value = this.getter.call(vm, vm)
   }
-  // "touch" every property so they are all tracked as
-  // dependencies for deep watching
+  // проверяет каждое свойство, чтобы все отслеживались
+  // для глубокого-слежения (deep-watching)
   if (this.deep) {
     traverse(value)
   }
@@ -321,9 +318,9 @@ get () {
 }
 ```
 
-Remember `Dep.target`? Here it calls `pushTarget()` and `popTarget()`, and do the evaluation between them!
+Помните `Dep.target`? Вот здесь вызываются `pushTarget()` и `popTarget()`, и выполняются вычисления между ними.
 
-Imagine we have a component like this:
+Представим, что у нас есть компонент вроде:
 
 ```javascript
 {
@@ -338,46 +335,44 @@ Imagine we have a component like this:
 }
 ```
 
-We know that `data` will be converted to reactive property, it's value, the object will be observed. If you get data use `this.foo` it will be proxied to `this._data['foo']`.
+Мы знаем, что `data` будет обернуто в реакивное свойство, и значение-объект станет наблюдаемым. Если вы попытаетесь использовать `this.foo` обращение будет перенаправлено на `this._data['foo']`.
 
-Now let's try to build a watcher step-by-step:
+Теперь давайте попробуем построить наблюдатель шаг-за-шагом:
 
-- assign our input function to getter
-- call `this.get()`
-- call `pushTarget(this)` which changes `Dep.target` to this watcher
-- call `this.getter.call(vm, vm)`
-- run `return this.foo + 'new!'`
-- because `this.foo` is proxied to `this._data[foo]`, the reactive property `_data`'s getter is triggered
-- inside the getter, it calls `dep.depend()`
-- inside `depend()`, it calls `Dep.target.addDep(this)`, here `this` refers to the const `dep`, it's `_data`'s dep
-- then it calls `childOb.dep.depend()` which add the dep of `childOb` to our target. Notice this time the `this` of `Dep.target.addDep(this)` refers to `childOb.__ob__.dep`
-- inside `addDep()`, the watcher add this dep to it's `this.newDepIds` and `this.newDeps`
-- because the default value of `this.depIds` is `[]`, the watcher calls `dep.addSub(this)`
-- inside `addSub`, the dep add the watcher to it's `this.subs`
-- now the watcher has gotten the value, it will `traverse()` the value to collect dependencies, calls `popTarget()` and `this.cleanupDeps()`
+- присвоить функцию для доступа к данным в геттер
+- вызывать `this.get()`
+- вызывать `pushTarget(this)` с изменением `Dep.target` для наблюдателя
+- вызывать `this.getter.call(vm, vm)`
+- запустить `return this.foo + 'new!'`
+- т.к. `this.foo` перенаправляется на `this._data[foo]`, будет вызван геттер реактивного свойства `_data`
+- внутри геттера вызовется `dep.depend()`
+- внутри `depend()` вызовется `Dep.target.addDep(this)`, где `this` ссылается на постоянный `dep`, он внутри засисимых `dep` от `_data`
+- будет вызван `childOb.dep.depend()` который добавит новый `dep` к целевому объекту `childOb`. Обратите внимание, что на этот раз `this` в `Dep.target.addDep(this)` ссылается на `childOb.__ob__.dep`
+- внутри `addDep()` наблюдатель добавит себя в список зависимостей `this.newDepIds` и `this.newDeps`
+- поскольку начальное значение `this.depIds` это `[]`, наблюдатель вызовет `dep.addSub(this)`
+- внутри `addSub` зависиомть добавит себя в список `this.subs` наблюдателя
+- теперь наблюдатель получит значение, он пробросит (`traverse()`) значение для сбора зависиостей и вызовет `popTarget()` и `this.cleanupDeps()`
 
-After this complex process, the watcher knows its dependencies, the dep knows its subscribers, the dynamic data net is built. With this net, Dep can `notify()` its subscribers when the reactive property gets the new value, which may trigger the `get()` again and refresh the value and relations.
+После такого сложного процесса наблюдатель знает о своих зависимостях, `dep` знает о подписчиках, сеть динамических данных построена. C этой сетью `Dep` может уведомлять (`notify()`) своих подписчиков о том, что реактивное свойство получило новое значение, что снова может запускать `get()` и обновлять значения и связи.
 
-And what `cleanupDeps` does? After reading the code, you can tell how it works to refresh the dependence relations.
+А что делает `cleanupDeps`? Прочитав исходный код вы сможете ответить как она работает для обновления списка записимостей.
 
 ---
 
 ![](http://i.imgur.com/5BRYgfi.jpg)
 
-Above is the initialization of dynamic data net, this can help you understand the process.
+Выше находится инициализация сети динамических данных, это поможет лучше понять процесс.
 
-If reactive property changes, it just triggers this process again to refresh computed property value and rebuild the dynamic data net.
+Если реативное свойство изменяется, оно просто запускает процесс с самого начала, чтобы обновить значения вычисляемых свойств и перестроить сеть динамических данных.
 
-## Next Step
+## Следующий шаг
 
-Now we know how to build the dynamic data net. Next article will focus on three watcher updating ways and discuss how Vue keeps the correct updating order.
+Теперь мы знаем как устроена сеть динамических данных. Следующая часть сосредоточится на способах обновления дерева наблюдателей и как Vue понимает правильный порядок обновления.
 
-Read next chapter: [Dynamic Data - Lazy, Sync and Queue](https://github.com/numbbbbb/read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md).
+Читайте дальше: [Изменяемые данные - Lazy, Sync и Queue](https://github.com/vvscode/tr--read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md).
 
-## Practice
+## Практика
 
-Read the `cleanupDeps` method in `./watcher.js` and tell how this method updates the dependency during `get()` process.
+Прочитайте метод `cleanupDeps` в `./watcher.js` и расскажите как он обновляет список зависимостей во время работы `get()`.
 
-Hint: the key is those two arrays: `this.newDepIds` and `this.depIds`. You may want to read `addDep()` first.
-
-
+Подсказка: обратите внимание на два массива: `this.newDepIds` и `this.depIds`. Возможно для начала стоит прочитать `addDep()`.
