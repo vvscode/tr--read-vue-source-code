@@ -1,29 +1,29 @@
 # Dynamic Data - Lazy, Sync and Queue
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Этот материал - часть серии статей [Читая исходный код Vue Source](https://github.com/vvscode/tr--read-vue-source-code).
 
-In this article, we will see:
+В этой части мы рассмотрим:
 
-- Update Watcher in three ways
-- How to trigger view updating
-- How to keep the updating order
+- Три способа обновлелния Watcher
+- Как запустить обновление представления (view)
+- Как организовать порядок обновления
 
-## Update Watcher in Three Ways
+## Три способа обновления Whatcher
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) we have learned how Vue builds dynamic data net with Observer, Dep and Watcher. But that's just a glance, there are several important things we need to talk.
+В [прошлой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) мы разобрали как Vue работает с изменяемыми данными с помощью Observer, Dep и Watcher. Но это было мельком, есть еще несколько важных вещей, которые стоит обсудить.
 
-Go back to `./watcher.js` again.
+Вернемся к `./watcher.js`.
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) we just simulate the init process, now let's talk about updating.
+В [прошлой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) мы разобрали процесс инициализации, теперь давайте поговорим об обновлении.
 
-Remember that when you update a reactive property, the setter will be called and it will call `dep.notify()` which calls `update()` of its subscribers(they are Watchers).
+Напомню, когда вы обновляете реактивное свойство, вызывается его сеттер, что вызывает `dep.notify()`, который вызывает `update()` у своих подписчиков (тех, которые Watcher'ы).
 
-So we can go directly to `update()`.
+Перейдем прямо в `update()`.
 
 ```javascript
 /**
- * Subscriber interface.
- * Will be called when a dependency changes.
+ * Интерфейс подписчика
+ * Будет вызываться при изменении зависимостей
  */
 update () {
   /* istanbul ignore else */
@@ -37,20 +37,20 @@ update () {
 }
 ```
 
-This `if-else` statement has three clauses, let's look through them one by one.
+Эта конструкция `if-else` имеет три ветки, рассмотрим их одну за одной.
 
-### Lazy
+### Lazy (Ленивое обновление)
 
-If this watcher is lazy according to the options you pass in during initialization, it just marks itself dirty.
+Если наблюдатель создан ленивым - в соответствии с параметрами, переданными при инициализации, он просто будет помечен как `dirty` (измененный).
 
-Let's find out where `dirty` is used.
+Давайте найдем, где этот флай `dirty` используется.
 
-Search `dirty`, you got:
+Поискав `dirty`, вы получите:
 
 ```javascript
 /**
- * Evaluate the value of the watcher.
- * This only gets called for lazy watchers.
+ * Вычисляет значение наблюдателя
+ * Вызывается только для "ленивых" наблюдателей
  */
 evaluate () {
   this.value = this.get()
@@ -58,49 +58,49 @@ evaluate () {
 }
 ```
 
-When `evaluate()` is called, it calls `this.get()` to get the real value and set `dirty` to `false`. Where is `evaluate()` called? Let's do a global search.
+Когда вызывается `evaluate()`, он вызывает `this.get()` для получения актуального значения и утсановки флага `dirty` в `false`. Где вызывается `evaluate()` ? Сделаем поиск по всему проекту.
 
-If you use Sublime Text, right click on `src` directory and choose `Find in Folder...`.
+В Sublime Text - клик правой кнокой на директории `src` и выбираете `Find in Folder...`.
 
 ![](http://i.imgur.com/sO4k7GQ.jpg)
 
-Then enter `evaluate` and click `Find`.
+Вводим `evaluate` и нажимаем `Find`.
 
 ![](http://i.imgur.com/0qtiIU8.jpg)
 
-The first result calls `watcher.evaluate()`, double click that line to jump to that file.
+Первый же результат - `watcher.evaluate()`, двойной клик по строчке перекинет нас в файл.
 
 ![](http://i.imgur.com/qcP4R3w.jpg)
 
-Code: 
+Код:
 
 ```javascript
-function createComputedGetter (key) {
-  return function computedGetter () {
-    const watcher = this._computedWatchers && this._computedWatchers[key]
+function createComputedGetter(key) {
+  return function computedGetter() {
+    const watcher = this._computedWatchers && this._computedWatchers[key];
     if (watcher) {
       if (watcher.dirty) {
-        watcher.evaluate()
+        watcher.evaluate();
       }
       if (Dep.target) {
-        watcher.depend()
+        watcher.depend();
       }
-      return watcher.value
+      return watcher.value;
     }
-  }
+  };
 }
 ```
 
-Got it. When computed property's getter is called, if the watcher is dirty, it will do the evaluation. Use lazy mode can put off the evaluation until you really need the value.
+Вот оно. Когда вызывается геттер вычисляемого свойства, если наблюдатель помечен как `dirty`, будет выполнено вычислениe. Использование ленивого режима может отложить вычисления пока вам действительно не понадобится значение.
 
-### Sync
+### Sync (Синхронное обновление)
 
-Go back to our second `if-else` clause.
+Вернемся ко второй ветке конструкции `if-else`.
 
 ```javascript
 /**
- * Subscriber interface.
- * Will be called when a dependency changes.
+ * Интерфейс подписчика
+ * Будет вызываться при изменении зависимостей
  */
 update () {
   /* istanbul ignore else */
@@ -114,25 +114,25 @@ update () {
 }
 ```
 
-If this watcher's `sync` is `true`, it will call `this.run()`. Search `run`.
+Если у наблюдателя поле `sync` установлено в `true`, будет вызван `this.run()`. Поищем `run`.
 
 ```javascript
 /**
- * Scheduler job interface.
- * Will be called by the scheduler.
+ * Интерфейс подписчика
+ * Будет вызываться при изменении зависимостей
  */
 run () {
   if (this.active) {
     const value = this.get()
     if (
       value !== this.value ||
-      // Deep watchers and watchers on Object/Arrays should fire even
-      // when the value is the same, because the value may
-      // have mutated.
+      // "Глубокие" наблюдатели, и наблюдатели за объектами и массивами
+      // должны отрабатывать даже если значение не изменилось
+      // потому, что объект мог быть изменен
       isObject(value) ||
       this.deep
     ) {
-      // set new value
+      // устанавливаем новое значение
       const oldValue = this.value
       this.value = value
       if (this.user) {
@@ -149,18 +149,18 @@ run () {
 }
 ```
 
-This function calls `this.get()`. If the value changes or it's an object or this watcher is deep, the old value will be replaced and the callback function will be called.
+Эта фукнция вызывает `this.get()`. Если значение изменилось, или является объектом, или мы имеем дело с глубоким наблюдением, старое значение будет заменено и функция будет вызвана.
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) we have learned how `this.get()` works, you can read it again if you forget.
+В [прошлой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/04-dynamic-data-observer-dep-and-watcher.md) мы разобрали как работает `this.get()`, можете перечитать, если забыли.
 
-Sync mode is easy to understand, but unfortunately, it's `false` by default. The most frequently used mode is Async.
+Синхронный режим легок для понимания, но увы - значение этого флаза по-умолчанию - `false`. Самый частоиспользуемый режим - асинхронный.
 
-### Queue
+### Queue (Очередь)
 
 ```javascript
 /**
- * Subscriber interface.
- * Will be called when a dependency changes.
+ * Интерфейс подписчика
+ * Будет вызываться при изменении зависимостей
  */
 update () {
   /* istanbul ignore else */
@@ -174,33 +174,33 @@ update () {
 }
 ```
 
-If your watcher is neither lazy nor sync, the execution will flow to `queueWatcher(this)`.
+Если налюдатель не относится ни к синхронным, ни к ленивым, выполнение приведет к `queueWatcher(this)`.
 
 ```javascript
 /**
- * Push a watcher into the watcher queue.
- * Jobs with duplicate IDs will be skipped unless it's
- * pushed when the queue is being flushed.
+ * Закинем наблюдатель в очередь наблюдателей
+ * Задачи с повторяющимися ID будут пропустаться
+ * Пока состояние очереди не будет сброшено
  */
-export function queueWatcher (watcher: Watcher) {
-  const id = watcher.id
+export function queueWatcher(watcher: Watcher) {
+  const id = watcher.id;
   if (has[id] == null) {
-    has[id] = true
+    has[id] = true;
     if (!flushing) {
-      queue.push(watcher)
+      queue.push(watcher);
     } else {
-      // if already flushing, splice the watcher based on its id
-      // if already past its id, it will be run next immediately.
-      let i = queue.length - 1
+      // Если сбросили состояние - удалим наблюдатель по его id
+      // Если задача с таким id уже добавлена - переходим к следующей
+      let i = queue.length - 1;
       while (i > index && queue[i].id > watcher.id) {
-        i--
+        i--;
       }
-      queue.splice(i + 1, 0, watcher)
+      queue.splice(i + 1, 0, watcher);
     }
-    // queue the flush
+    // сброс очереди
     if (!waiting) {
-      waiting = true
-      nextTick(flushSchedulerQueue)
+      waiting = true;
+      nextTick(flushSchedulerQueue);
     }
   }
 }
@@ -208,13 +208,13 @@ export function queueWatcher (watcher: Watcher) {
 
 If the queue isn't flushing now, it simply pushes the watcher into the queue.
 
-If the queue is flushing, it will find the right position of this watcher based on its id. 
+If the queue is flushing, it will find the right position of this watcher based on its id.
 
 Finally, if we are not waiting, calls `flushSchedulerQueue()` at nextTick.
 
 Here we meet two flags: `flushing` and `waiting`. Seems they are very similar, why should we use two flags?
 
-We can do a reverse think. What if we only have `flushing`? 
+We can do a reverse think. What if we only have `flushing`?
 
 `flushing` will be set to `true` when `flushSchedulerQueue()` is executed. Oh, notice that `flushSchedulerQueue()` is called with `nextTick()`, thus it won't be executed now. If we call `queueWatcher()` multiple times, there will be duplicated `flushSchedulerQueue()` at nextTick!
 
@@ -311,5 +311,3 @@ Read next chapter: [View Rendering - Intruduction](https://github.com/numbbbbb/r
 Try to tell how Vue keeps the correct updating order if the computed watcher is `lazy`.
 
 Hint: simulate the updating process by yourself.
-
-
