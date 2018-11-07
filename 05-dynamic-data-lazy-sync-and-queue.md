@@ -1,4 +1,4 @@
-# Dynamic Data - Lazy, Sync and Queue
+# Изменяемые данные - Lazy, Sync и Queue (Лень, синхронность и очередь)
 
 Этот материал - часть серии статей [Читая исходный код Vue Source](https://github.com/vvscode/tr--read-vue-source-code).
 
