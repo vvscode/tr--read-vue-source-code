@@ -206,35 +206,35 @@ export function queueWatcher(watcher: Watcher) {
 }
 ```
 
-If the queue isn't flushing now, it simply pushes the watcher into the queue.
+Если очередь не в процессе очистки (флаг `flushing`), этот код просто добавит налюдателя в очередь.
 
-If the queue is flushing, it will find the right position of this watcher based on its id.
+Иначе - он попытается найти правильную позицию для наблюдателя на основании его id.
 
-Finally, if we are not waiting, calls `flushSchedulerQueue()` at nextTick.
+Ну и наконец, если флаг ожидания (`waiting`) не установлен - вываем `flushSchedulerQueue()` через `nextTick`.
 
-Here we meet two flags: `flushing` and `waiting`. Seems they are very similar, why should we use two flags?
+Здесь мы встречаем два флага: `flushing` и `waiting`. Они кажутся очень похожими, так зачем нам два флага?
 
-We can do a reverse think. What if we only have `flushing`?
+Можем зайти с другого конца. Что если бы мы использовали только `flushing` ?
 
-`flushing` will be set to `true` when `flushSchedulerQueue()` is executed. Oh, notice that `flushSchedulerQueue()` is called with `nextTick()`, thus it won't be executed now. If we call `queueWatcher()` multiple times, there will be duplicated `flushSchedulerQueue()` at nextTick!
+`flushing` устанавливается в `true`, когда выполнена `flushSchedulerQueue()`. И обратите внимание, что функция `flushSchedulerQueue()` вызывается с помощью `nextTick()`, так что она не выполняется немедленно. Если мы вызовем `queueWatcher()` несколько раз подряд, мы получим дублирующиеся вызовы `flushSchedulerQueue()` на следующем шаге!
 
-That's it. `flushing` marks whether the tasks in the queue is executing, `waiting` marks whether the flush operation is placed at nextTick.
+Вот оно. `flushing` помечает, что задачи в очереди выполняются, `waiting` указывает, что операция сброса очереди находится в очереди в `nextTick`.
 
-## How to Trigger View Updating
+## Как запустить обновление представления (View)
 
-Now we know how watchers update their value, but hey, watchers are used for computed properties and watch callbacks, how do our views update when reactive properties change?
+Теперь мы знаем как наблюдатели обновляют свои значения. Стоп, наблюдатели используются для вычисляемых свойств и наблюдателей-коллбэков, как обновляются наши представления, когда изменяются реактивные свойства?
 
-There are no reasons for Vue to implement another dynamic data process, it should reuse Watcher for view updating. But we haven't seen any watchers created for view updating.
+Нет никаких причин для того, чтобы Vue заводил еще один процесс обработки изменяемых данных, мы можем переиспользовать наблюдатели для обновления представлений. Но пока мы не видели ниодного наблюдателя, который бы занимался обновлением отображения.
 
-Let's use global searching again. What's the keyword? Remember we have met `_update` and `_render` in init process, let's try `_update` first.
+Давайте снова воспользуемся глобальным поиском. Что будем искать? Помните те `_update` и `_render`, которые мы встретили в процессе инициализации. Давайте начнем с `_update`.
 
 ![](http://i.imgur.com/SCB7qkC.jpg)
 
-Seems the `updateComponent` in the first result is what we need, double click it.
+Похоже, что `updateComponent` в первом же результате это то, что нам нужно. Двойной клик и переходим к коду.
 
 ![](http://i.imgur.com/2V83kfm.jpg)
 
-Code:
+Код:
 
 ```javascript
   } else {
@@ -244,13 +244,13 @@ Code:
 }
 ```
 
-Here it is! We are right, Vue creates a Watcher for `updateComponent`. These lines are inside `mountComponent`, and `mountComponent` is the core of `$mount`. So after initializing the component, Vue will call `$mount` and inside it, the Watcher is created.
+Вот оно. Мы были правы, Vue создает наблюдателей для `updateComponent`. Эти строчки внутри `mountComponent`, а `mountComponent` - это ядро `$mount`. Так что после инициализации компонента, Vue вызывает `$mount` и уже внутри создается наблюдатель.
 
-When a new Watcher is created, it's `lazy` is `false` by default, so at the end of the constructor, it will call `get()` and build the whole dynamic data net.
+Когда новый наблюдатель (Watcher) создан, его флаг `lazy` по-умолчанию установлен в `false`, так что в конце конструктора вызывается `get()` и создается целая сеть динамических данных.
 
-Notice that `updateComponent` is the second parameter, and it will become the `getter` of the Watcher. So when Vue tries to get this Watcher's value, it will update the view. If it's hard to understand, you can treat this getter as a wrapper of the real getter, it updates the view after calling the real getter(the `vm._render()`).
+Обратите внимание, что `updateComponent` это второй параметр, и он станет геттером у наблюдателя. Так что когда Vue попытается получить значение, это обновит представление. Если это сложно понять - можете думать об этом геттере как об обертке над оригинальным геттером, который обновляет представление после вызова оригинального геттера (строчка `vm.render()`).
 
-A little tricky, but it works well.
+Немного мудрено, но это работает.
 
 ## How to Keep The Updating Order
 
