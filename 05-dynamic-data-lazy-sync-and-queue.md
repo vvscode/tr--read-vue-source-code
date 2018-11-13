@@ -252,13 +252,13 @@ export function queueWatcher(watcher: Watcher) {
 
 Немного мудрено, но это работает.
 
-## How to Keep The Updating Order
+## Как организовать порядок обновления
 
-After learning initialization and data updating process, we can try to solve a complicated problem.
+После изучения процесса инициализации и обновления данных мы можем попробовать что-то более сложное.
 
-How to make sure all data and views update in the correct order?
+Как гарантировать, что все данные и представления обновляютс в правильном порядке?
 
-Let's see a small example:
+Рассмотрим маленький пример:
 
 ```vue
 <div id="app">
@@ -278,36 +278,36 @@ var app = new Vue({
 })
 ```
 
-In this example, we have one property, one computed property. And we display the computed property in view.
+В этом примере у нас есть одно свойство и одно вычисляемое свойство. И мы выводим это вычисляемое свойство в шаблоне.
 
-After initialization, we have one reactive property and two watchers subscribe to it. Notice the view doesn't subscribe to the computed property because the computed property is a watcher, not a reactive property.
+После инициализации у нас появляется одно реактивное свойство, и два наблюдателя подписанных на него. Обратите внимание, что представление не подписывается на вычисляемое свойство, потому что оно является наблюдателем, а не реактивным свойство.
 
-Now we change the value of `name`, we know that the computed property and view will both update. But would them update in the correct order? If view updates first, it will show the old computed property value.
+Мы получаем значение поля `name`, мы знаем, что и вычисляемое свойство и представление должны обновиться. Но будут ли оно обновляться в правильном порядке? Если сначала обновится представление оно покажет старое значение вычисляемого свойства.
 
-How Vue solves this problem?
+Как Vue решает эту проблему?
 
-Let's simulate the updating process.
+Давайте представим процесс обновления.
 
-When `name` changes, it will call `dep.notify()`. `notify()` will iterate it's subscriber array and call their `update()`. By default, the watcher's `lazy` and `sync` are both `false`, so two tasks will be pushed to queue.
+Когда обновляется `name`, это вызывает `dep.notify()`. `notify()` пройдет по массиву подписчиков и вызовет у них `update()`. По-умолчанию, наблюдатели имеют и `lazy` и `syn` в стостоянии `false`, так что обе задачи будут добавлены в очередь.
 
-Okay, the key is the task order.
+Ок, ключевой момент здесь - порядок задач.
 
-Read `flushSchedulerQueue` again, we can find there are a sort call and some comments. Before running all tasks, the queue will sort them based on their `id`. Recall that `$mount` is the last operation during initialization, we know that the computed watcher is created before rendering watcher, so it's `id` is smaller, thus it's executed early.
+Давайте перечитаем `flushSchedulerQueue`, там мы можем обнаружить сортировку вызовов и кое-какие комментарии. До запуска всех задач, очередь будет отсортирована по полю `id`. Повторный вызвав `$mount` в последней операции процесса инициализацаа, мы знаем, что вычисляемый наблюдатель создается до наблюдателя для рендеринга, так что его `id` будет меньше, т.е. он вызовется раньше.
 
-> Queue introduces a new problem: if you use the queue and read computed property right after changing the data it depends, you will get old value. However, after global searching, I found that `sync` is always `true`, so seems the queue is never used.
+> Очередь создает новую проблему: если вы используете очередь и читаете вычисляемые свойство сразу за изменением данных, вы получите старое значение. но после поиска по проекту, мы узнаем, что `sync` всегда `true`, так что , похоже, очередь никогда не используется.
 
-You see, the updating order is set based on initialization order, now you know why we have to learn init process first.
+Видите, порядок обновления завиисит от порядка инициализации, теперь вы знаете, почему мы начали разбираться с процесса инициализации.
 
-You may ask, what would happen if the computed watcher is `lazy`? I will leave this to you.
+Вы можете спросить, что если бы вычисляемый наблюдатель был `lazy` ? Это я оставлю вам.
 
-## Next Step
+## Следующий шаг
 
-We have learned three updating ways and how to keep the correct updating order. But these all happen "inside", how does Vue apply the updating to DOM? How to convert your `.vue` files into browser executable code? Next several articles will talk about the entire render process.
+Мы разобрали три варианта обновления и как поддерживается правильный порядок обновления. Но это все происходит внутри, a как Vue применяет это к обновлению DOM? Как преобразовать ваши `.vue` файлы в код, выполняемый браузером? Следующие несколько статей мы поговорим провесь процесс рендеринга.
 
-Read next chapter: [View Rendering - Intruduction](https://github.com/numbbbbb/read-vue-source-code/blob/master/06-view-render-introduction.md).
+В следующей части: [Ввердение в рендеринг View](https://github.com/vvscode/tr--read-vue-source-code/blob/master/06-view-render-introduction.md).
 
-## Practice
+## Практика
 
-Try to tell how Vue keeps the correct updating order if the computed watcher is `lazy`.
+Попробуйте разобраться как Vue разбирается с корректным порядком для наблюдателей с флагом `lazy`.
 
-Hint: simulate the updating process by yourself.
+Подсказка: просчитайте, что происходит при обновлении самостоятельно.
