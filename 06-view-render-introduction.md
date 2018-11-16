@@ -1,61 +1,64 @@
-# View Render - Introduction
+# Рендеринг View - Введение
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Эта статья - часть серсии [читая исходный код Vue](https://github.com/vvsdoe/tr--read-vue-source-code).
 
-In this article, we will learn:
+В этой части мы разберем:
 
-- How to find render functions
-- The structure of view render
+- Как найти функции ренедеринга
+- Устройство рендера представлений
 
-## Find Render Functions
+## Ищем функции рендеринга
 
-After understanding the initialization and data updating, now we turn to the view render part to see how Vue converts our data to the real DOM nodes.
+Итак - мы разобрались в процессе инцициализации и обновления данных. Теперь перейдем к рендерингу представлений и посмотрим, как Vue превращает наши данные в узлы DOM дерева.
 
-> Notice: the word "render" refers to the whole view rendering process, while the formatted `render()` or `_render()` refers to the real function.
+> Замечание: слово "рендер" относится ко всему процессу рендеринга представлений, тогда как форматированные `render()` или `_render()` указывает на имена функций.
 
-First of all, we need to find functions related to render process.
+Для начала, нам нужно найти функции, относящиеся к процессу ренедринга.
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md), we have learned that `mountComponent()` will use `_update()` and `_render()` to update views. Let's do a global search to find `_update`.
+В [пролой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/05-dynamic-data-lazy-sync-and-queue.md) мы разобрали, что `mountComponent()` будет использовать `_update()` и `_render()` для обновления представлений. Давайте поищем по проекту слово `_update`.
 
 ```javascript
-Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
-  const vm: Component = this
+Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
+  const vm: Component = this;
   if (vm._isMounted) {
-    callHook(vm, 'beforeUpdate')
+    callHook(vm, 'beforeUpdate');
   }
-  const prevEl = vm.$el
-  const prevVnode = vm._vnode
-  const prevActiveInstance = activeInstance
-  activeInstance = vm
-  vm._vnode = vnode
+  const prevEl = vm.$el;
+  const prevVnode = vm._vnode;
+  const prevActiveInstance = activeInstance;
+  activeInstance = vm;
+  vm._vnode = vnode;
   // Vue.prototype.__patch__ is injected in entry points
   // based on the rendering backend used.
   if (!prevVnode) {
     // initial render
     vm.$el = vm.__patch__(
-      vm.$el, vnode, hydrating, false /* removeOnly */,
+      vm.$el,
+      vnode,
+      hydrating,
+      false /* removeOnly */,
       vm.$options._parentElm,
-      vm.$options._refElm
-    )
+      vm.$options._refElm,
+    );
   } else {
     // updates
-    vm.$el = vm.__patch__(prevVnode, vnode)
+    vm.$el = vm.__patch__(prevVnode, vnode);
   }
-  activeInstance = prevActiveInstance
+  activeInstance = prevActiveInstance;
   // update __vue__ reference
   if (prevEl) {
-    prevEl.__vue__ = null
+    prevEl.__vue__ = null;
   }
   if (vm.$el) {
-    vm.$el.__vue__ = vm
+    vm.$el.__vue__ = vm;
   }
   // if parent is an HOC, update its $el as well
   if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
-    vm.$parent.$el = vm.$el
+    vm.$parent.$el = vm.$el;
   }
   // updated hook is called by the scheduler to ensure that children are
   // updated in a parent's updated hook.
-}
+};
 ```
 
 `_update()` uses `__patch__()` to calculate which part needs updating and manipulate corresponding DOMs. We will talk about `__patch__()` later.
@@ -104,8 +107,8 @@ After global searching `$option`, we find:
 vm.$options = mergeOptions(
   resolveConstructorOptions(vm.constructor),
   options || {},
-  vm
-)
+  vm,
+);
 ```
 
 `options` is the parameter passed in when you call `new Vue({...})`, so `render()` must comes from `vm.constructor`. `vm` is the instance of Vue, so we try to global search `options.render`, maybe we can find where it's set.
@@ -136,9 +139,9 @@ Cool! This is the outmost wrapper of `$mount()`, it calls `compileToFunctions()`
 Go on, `compileToFunctions()` comes from `./compiler/index.js`:
 
 ```javascript
-const { compile, compileToFunctions } = createCompiler(baseOptions)
+const { compile, compileToFunctions } = createCompiler(baseOptions);
 
-export { compile, compileToFunctions }
+export { compile, compileToFunctions };
 ```
 
 `createCompiler()` comes from `compiler/index.js`:
@@ -147,19 +150,19 @@ export { compile, compileToFunctions }
 // `createCompilerCreator` allows creating compilers that use alternative
 // parser/optimizer/codegen, e.g the SSR optimizing compiler.
 // Here we just export a default compiler using the default parts.
-export const createCompiler = createCompilerCreator(function baseCompile (
+export const createCompiler = createCompilerCreator(function baseCompile(
   template: string,
-  options: CompilerOptions
+  options: CompilerOptions,
 ): CompiledResult {
-  const ast = parse(template.trim(), options)
-  optimize(ast, options)
-  const code = generate(ast, options)
+  const ast = parse(template.trim(), options);
+  optimize(ast, options);
+  const code = generate(ast, options);
   return {
     ast,
     render: code.render,
-    staticRenderFns: code.staticRenderFns
-  }
-})
+    staticRenderFns: code.staticRenderFns,
+  };
+});
 ```
 
 `createCompilerCreator()`, good name! It's a high order function which creates the `createCompiler()` function which is used to create the compiler. Later our template will be compiled using this compiler.
@@ -192,11 +195,7 @@ Read next chapter: [View Rendering - Compiler](https://github.com/numbbbbb/read-
 ## Practice
 
 ```javascript
-vnode = render.call(vm._renderProxy, vm.$createElement)
+vnode = render.call(vm._renderProxy, vm.$createElement);
 ```
 
 This line is located in `_render()`, try to figure out what is `vm._renderProxy` and it's role.
-
-
-
-
