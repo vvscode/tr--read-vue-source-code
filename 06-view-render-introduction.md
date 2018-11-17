@@ -28,10 +28,10 @@ Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
   const prevActiveInstance = activeInstance;
   activeInstance = vm;
   vm._vnode = vnode;
-  // Vue.prototype.__patch__ is injected in entry points
-  // based on the rendering backend used.
+  // Vue.prototype.__patch__ создается в точке входа
+  // Зависит от того, что используется для рендеринга
   if (!prevVnode) {
-    // initial render
+    // Первоначальный рендеринг
     vm.$el = vm.__patch__(
       vm.$el,
       vnode,
@@ -41,43 +41,43 @@ Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
       vm.$options._refElm,
     );
   } else {
-    // updates
+    // обновления
     vm.$el = vm.__patch__(prevVnode, vnode);
   }
   activeInstance = prevActiveInstance;
-  // update __vue__ reference
+  // обновляет ссылку  __vue__
   if (prevEl) {
     prevEl.__vue__ = null;
   }
   if (vm.$el) {
     vm.$el.__vue__ = vm;
   }
-  // if parent is an HOC, update its $el as well
+  // Если родительский комонент -  HOC, заодно обновим его  $el
   if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
     vm.$parent.$el = vm.$el;
   }
-  // updated hook is called by the scheduler to ensure that children are
-  // updated in a parent's updated hook.
+  // Хук обновления вызывается планировщиком, чтобы гарантировать
+  // Что дочерние элементы были обновлены по хуку родительского компонента
 };
 ```
 
-`_update()` uses `__patch__()` to calculate which part needs updating and manipulate corresponding DOMs. We will talk about `__patch__()` later.
+`_update()` использует `__patch__()`  для обсчета того, какие части нужно обновить и манипуляций с соответствующим DOM. Про `__pathch__()` поговорим попозже.
 
-Go back to `mountComponent()`, our next target is `_render()`.
+Вернемся к  `mountComponent()`, наша следующая цель - `_render()`.
 
-We have seen `_render()` is defined in `core/instance/render.js`, let's look at it again.
+Мы видели, что `_render()` определен в `core/instance/render.js`, давайте снова на него посмотрим..
 
 ```javascript
 Vue.prototype._render = function (): VNode {
   const vm: Component = this
   const {
-    render,  // <-- IMPORTANT
+    render,  // <-- ВАЖНО
     staticRenderFns,
     _parentVnode
-  } = vm.$options // <-- IMPORTANT
+  } = vm.$options // <-- ВАЖНО
 
   if (vm._isMounted) {
-    // clone slot nodes on re-renders
+    // Клонирует ноды слота при ререндере
     for (const key in vm.$slots) {
       vm.$slots[key] = cloneVNodes(vm.$slots[key])
     }
@@ -88,20 +88,20 @@ Vue.prototype._render = function (): VNode {
   if (staticRenderFns && !vm._staticTrees) {
     vm._staticTrees = []
   }
-  // set parent vnode. this allows render functions to have access
-  // to the data on the placeholder node.
+  // Задает родительский vnode. Это дает рендер-функции доступ к данным
+  // из узла-заглушки
   vm.$vnode = _parentVnode
-  // render self
+  // собственно рендер
   let vnode
   try {
-    vnode = render.call(vm._renderProxy, vm.$createElement) // <-- IMPORTANT
+    vnode = render.call(vm._renderProxy, vm.$createElement) // <-- ВАЖНО
   } catch (e) {
   ...
 ```
 
-Inside `_render()`, it calls `render()` which is extracted from `vm.$options`.
+Внутри `_render()`, вызывается `render()` , который извлечен из  `vm.$options`.
 
-After global searching `$option`, we find:
+После поиска `$option` по проекту, находим:
 
 ```javascript
 vm.$options = mergeOptions(
@@ -111,17 +111,17 @@ vm.$options = mergeOptions(
 );
 ```
 
-`options` is the parameter passed in when you call `new Vue({...})`, so `render()` must comes from `vm.constructor`. `vm` is the instance of Vue, so we try to global search `options.render`, maybe we can find where it's set.
+`options` - это параметр, передаваемый при вызове `new Vue({...})`, так что  `render()` должен приходить из  `vm.constructor`. `vm` это экземпляр  Vue, так что попробуем поискать  `options.render`, может удастся найти где он задается..
 
-Look through the search results, this one set a value.
+Смотрим на результаты поиска - вот тут задается значение.
 
 ![](http://i.imgur.com/RvT8WgO.jpg)
 
-Double click it.
+Двойной клик.
 
 ![](http://i.imgur.com/wVMfCcr.jpg)
 
-Code:
+Код:
 
 ```javascript
 ...
@@ -134,9 +134,9 @@ options.staticRenderFns = staticRenderFns
 ...
 ```
 
-Cool! This is the outmost wrapper of `$mount()`, it calls `compileToFunctions()` with your `template`, gets `render` and `staticRenderFns` as return value and set it to `options.render`.
+Круто, это обертка над `$mount()`, которая вызывает `compileToFunctions()` с вашим шаблоном (`template`), получает `render` и `staticRenderFns` как позвращаемое значение и сохраняет их в `options.render` / `options.staticRenderFns`.
 
-Go on, `compileToFunctions()` comes from `./compiler/index.js`:
+Продолжаем, `compileToFunctions()` появляется из `./compiler/index.js`:
 
 ```javascript
 const { compile, compileToFunctions } = createCompiler(baseOptions);
@@ -147,9 +147,9 @@ export { compile, compileToFunctions };
 `createCompiler()` comes from `compiler/index.js`:
 
 ```javascript
-// `createCompilerCreator` allows creating compilers that use alternative
-// parser/optimizer/codegen, e.g the SSR optimizing compiler.
-// Here we just export a default compiler using the default parts.
+// `createCompilerCreator` позволяет создавать компиляторы, использующие альтернативные 
+// парсеры/оптимизаторы/кодогенераторы, например компиляторы, оптимизарованные под серверный рендеринг (SSR)
+// Пока мы используем реализацию по-умолчанию - мы просто экспортируем стандартный компилятор
 export const createCompiler = createCompilerCreator(function baseCompile(
   template: string,
   options: CompilerOptions,
