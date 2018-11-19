@@ -61,9 +61,9 @@ Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
 };
 ```
 
-`_update()` использует `__patch__()`  для обсчета того, какие части нужно обновить и манипуляций с соответствующим DOM. Про `__pathch__()` поговорим попозже.
+`_update()` использует `__patch__()` для обсчета того, какие части нужно обновить и манипуляций с соответствующим DOM. Про `__pathch__()` поговорим попозже.
 
-Вернемся к  `mountComponent()`, наша следующая цель - `_render()`.
+Вернемся к `mountComponent()`, наша следующая цель - `_render()`.
 
 Мы видели, что `_render()` определен в `core/instance/render.js`, давайте снова на него посмотрим..
 
@@ -99,7 +99,7 @@ Vue.prototype._render = function (): VNode {
   ...
 ```
 
-Внутри `_render()`, вызывается `render()` , который извлечен из  `vm.$options`.
+Внутри `_render()`, вызывается `render()` , который извлечен из `vm.$options`.
 
 После поиска `$option` по проекту, находим:
 
@@ -111,7 +111,7 @@ vm.$options = mergeOptions(
 );
 ```
 
-`options` - это параметр, передаваемый при вызове `new Vue({...})`, так что  `render()` должен приходить из  `vm.constructor`. `vm` это экземпляр  Vue, так что попробуем поискать  `options.render`, может удастся найти где он задается..
+`options` - это параметр, передаваемый при вызове `new Vue({...})`, так что `render()` должен приходить из `vm.constructor`. `vm` это экземпляр Vue, так что попробуем поискать `options.render`, может удастся найти где он задается..
 
 Смотрим на результаты поиска - вот тут задается значение.
 
@@ -147,7 +147,7 @@ export { compile, compileToFunctions };
 `createCompiler()` comes from `compiler/index.js`:
 
 ```javascript
-// `createCompilerCreator` позволяет создавать компиляторы, использующие альтернативные 
+// `createCompilerCreator` позволяет создавать компиляторы, использующие альтернативные
 // парсеры/оптимизаторы/кодогенераторы, например компиляторы, оптимизарованные под серверный рендеринг (SSR)
 // Пока мы используем реализацию по-умолчанию - мы просто экспортируем стандартный компилятор
 export const createCompiler = createCompilerCreator(function baseCompile(
@@ -165,37 +165,37 @@ export const createCompiler = createCompilerCreator(function baseCompile(
 });
 ```
 
-`createCompilerCreator()`, good name! It's a high order function which creates the `createCompiler()` function which is used to create the compiler. Later our template will be compiled using this compiler.
+`createCompilerCreator()`, хорошее название! Это функция высшего порядка, которая создает функцию `createCompiler()`, которая используется для создания компилятора. Позже наш шаблон будет преобразован этим компилятором.
 
-After reading the code of `createCompilerCreator()`, we learn that it's just a wrapper. The core function is `baseCompile()` which uses `parse()`, `optimize()` and `generate()` to do the real jobs.
+Прочитав исходный код `createCompilerCreator()`, мы увидим, что это просто обертка. Основная фукнция - `baseCompile()`, которая использует `parse()`, `optimise()` и `generate()` чтобы сделать всю работу.
 
-Let's make it clear:
+Проясним:
 
-- first, you choose your own parser, optimizer and codegen, use them to build the core compile function(or use the default one)
-- then, pass your compile function to `createCompilerCreator()`, it will return a function which can be used to create the compiler, thus its name is `createCompiler()`
-- next, call `createCompiler()` with options, it will return the real compiler
-- finally, use that compiler to compile the input template
+- сначала выбираем ваш парсер, оптимизатор и кодогенератов, чтобы создать главную фукнцию-компилятор (или используете стандартную)
+- дальше пробрасываем фукнцию-компилятор в `createCompilerCreator()`, которая вернет фукнцию используемую для создания компилятора, поэтому такое название -`createCompiler()`
+- дальше вызываем `createComiler()` с параметрами и получаем собственно компилятор
+- наконец, используем компилятор для обработки шаблона
 
-The purpose of this complicated process is extracting the core compiler and options. If you treat **core compiler function** and **options** as two parameters for `createCompiler()`, you can see it's similar with currying. Two parameters come at different time, so in `createCompilerCreator()` it has to create a new function to store **core compiler function** and return that function(this function is `createCompiler()`). When **options** is passed in, `createCompiler()` combines them and create the final compiler.
+Цель такого сложного процесса - вынести наружу компилятор и параметры. Если взглянуть на **core compiler function (функию компиляции)** and **options (опции)**, как на два параметра для `createCompiler()`, можно заметить, что это очень похоже на каррирование. Два параметра приходят в разное время, так что в `createCompilerCreator()` приходится создавать и возвращать новую функцию, для сохранения **core compiler function** (та самая `createCompiler()`). Когда будут переданы **options(опции)** - `createCompiler()` скомбинирует параметры и создаст финальный компилятор.
 
-Now we have found all functions related to render process: `_update()`, `__patch__()`, `_render()`, `createCompiler()`, `parse()`, `optimize()`, `generate()`. Let's organize them.
+Мы нашли все функции, относящиеся к процессу рендеринга `_update()`, `__patch__()`, `_render()`, `createCompiler()`, `parse()`, `optimize()`, `generate()`. Давайте разберем их взаимодействие.
 
-## The Structure of Render
+## Структура ренедеринга
 
-Render process starts when `mountComponent()` is called. It will call `_render()` to compile template into `render` and `staticRenderFns`, then pass them to `_update()` to calculate the operations and apply them to DOMs.
+Процесс ренедеринга начинается, когда вызывается `mountComponent()`. Он вызывает `_render()` для компиляции шаблона в `render` и `staticRenderFns`, после чего передает их в `_update()` для вычисления операций и применяет их к DOM.
 
 ![](http://i.imgur.com/NM77eiy.jpg)
 
-## Next Step
+## Следующий шаг
 
-Next two articles will talk about **compiler** and **patch**, you will see how VDom is designed and how to do the diff calculation fastly.
+Следующие две статьи будут о **compiler** и **patch** - вы увидите, как спроектирован VDom и как быстро просчитывать изменения.
 
-Read next chapter: [View Rendering - Compiler](https://github.com/numbbbbb/read-vue-source-code/blob/master/07-view-render-compiler.md).
+Читайте продолжение : [Рендеринг View - Компилятор](https://github.com/vvscode/tr--read-vue-source-code/blob/master/07-view-render-compiler.md).
 
-## Practice
+## Практика
 
 ```javascript
 vnode = render.call(vm._renderProxy, vm.$createElement);
 ```
 
-This line is located in `_render()`, try to figure out what is `vm._renderProxy` and it's role.
+Эта строчка расположена в `_render()`, попробуйте разобраться что такое `vm._renderProxy` и для чего он нужен.
