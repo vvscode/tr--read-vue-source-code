@@ -1,37 +1,37 @@
-# View Render - Compiler
+# Рендеринг View - Компилятор
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Этот материал - часть серии [Читая исходный код Vue](https://github.com/vvscode/tr--read-vue-source-code).
 
-In this article, we will learn:
+Мы разберем:
 
-- Parser
-- Optimizer
-- Generator
+- Парсер
+- Оптимизатор
+- Генератор
 
 ![](http://i.imgur.com/IgPbUuE.jpg)
 
-This article will focus on the compiler part.
+Эта статья главное внимание уделяет части компиляции.
 
 ```javascript
-// `createCompilerCreator` allows creating compilers that use alternative
-// parser/optimizer/codegen, e.g the SSR optimizing compiler.
-// Here we just export a default compiler using the default parts.
-export const createCompiler = createCompilerCreator(function baseCompile (
+// `createCompilerCreator` позволяет создавать компиляторы, которые используют альтернативные
+// parser/optimizer/codegen, например для серрверного рендеринга (SSR).
+// Тут мы просто экспортирует компилятор по-умолчанию с параметрами по-умолчанию.
+export const createCompiler = createCompilerCreator(function baseCompile(
   template: string,
-  options: CompilerOptions
+  options: CompilerOptions,
 ): CompiledResult {
-  const ast = parse(template.trim(), options)
-  optimize(ast, options)
-  const code = generate(ast, options)
+  const ast = parse(template.trim(), options);
+  optimize(ast, options);
+  const code = generate(ast, options);
   return {
     ast,
     render: code.render,
-    staticRenderFns: code.staticRenderFns
-  }
-})
+    staticRenderFns: code.staticRenderFns,
+  };
+});
 ```
 
-According to the code of `baseCompile`, template is first converted to AST by `parse()`, then goes to `optimize()` and `generate()` to generate **render** and **staticRenderFns**.
+Согласно коду функции `baseCompile`, шаблон сначала конвертируется в AST с помощью `parse()`,после чего отправляется `optimize()` и `generate()` для создания **render** и **staticRenderFns**.
 
 ## Parser
 
@@ -90,17 +90,17 @@ Here is a small demo written in `.vue` file:
 <script>
 export default {
   name: 'app',
-  data () {
+  data() {
     return {
-      name: 'foo'
-    }
+      name: 'foo',
+    };
   },
   computed: {
-    newName () {
-      return this.name + 'new!'
-    }
-  }
-}
+    newName() {
+      return this.name + 'new!';
+    },
+  },
+};
 </script>
 ```
 
@@ -109,46 +109,46 @@ If you write `<template>` tag inside your normal HTML file, Vue will compile it 
 Run `npm run build` to generate the modified Vue project. Copy `package/vue-template-compiler/build.js` to our demo's `node_modules/vue-template-compiler`, then use the modified vue-template-compiler to build it. I got this in my terminal:
 
 ```javascript
-{  
+{
   type:1,
   tag:'div',
-  attrsList:[  
-    {  
+  attrsList:[
+    {
       name:'id',
       value:'app'
     }
   ],
-  attrsMap:{  
+  attrsMap:{
     id:'app'
   },
   parent:undefined,
-  children:[  
-    {  
+  children:[
+    {
       type:2,
       expression:'"\\n  "+_s(newName ? newName + \'true\' : newName + \'false\')+"\\n  "',
       text:'\n  {{ newName ? newName + \'true\' : newName + \'false\' }}\n  '
     },
-    {  
+    {
       type:1,
       tag:'span',
-      attrsList:[  
+      attrsList:[
 
       ],
-      attrsMap:{  
+      attrsMap:{
 
       },
-      parent:[  
+      parent:[
         Circular
       ],
-      children:[  
+      children:[
         Array
       ],
       plain:true
     }
   ],
   plain:false,
-  attrs:[  
-    {  
+  attrs:[
+    {
       name:'id',
       value:'"app"'
     }
@@ -177,39 +177,39 @@ const code = generate(ast, options)
 Below is the output of the second `console.log()`:
 
 ```javascript
-{  
+{
   type:1,
   tag:'div',
-  attrsList:[  
-    {  
+  attrsList:[
+    {
       name:'id',
       value:'app'
     }
   ],
-  attrsMap:{  
+  attrsMap:{
     id:'app'
   },
   parent:undefined,
-  children:[  
-    {  
+  children:[
+    {
       type:2,
       expression:'"\\n  "+_s(newName ? newName + \'true\' : newName + \'false\')+"\\n  "',
       text:'\n  {{ newName ? newName + \'true\' : newName + \'false\' }}\n  ',
       static:false
     },
-    {  
+    {
       type:1,
       tag:'span',
-      attrsList:[  
+      attrsList:[
 
       ],
-      attrsMap:{  
+      attrsMap:{
 
       },
-      parent:[  
+      parent:[
         Circular
       ],
-      children:[  
+      children:[
         Array
       ],
       plain:true,
@@ -219,8 +219,8 @@ Below is the output of the second `console.log()`:
     }
   ],
   plain:false,
-  attrs:[  
-    {  
+  attrs:[
+    {
       name:'id',
       value:'"app"'
     }
@@ -249,11 +249,10 @@ console.log(code) // <-- ADD THIS LINE
 ...
 ```
 
-
 ```javascript
-{  
+{
   render:'with(this){return _c(\'div\',{attrs:{"id":"app"}},[_v("\\n  "+_s(newName ? newName + \'true\' : newName + \'false\')+"\\n  "),_c(\'span\',[_v("This is static node")])])}',
-  staticRenderFns:[  
+  staticRenderFns:[
 
   ]
 }
@@ -282,6 +281,3 @@ Read next chapter: [View Rendering - Patch](https://github.com/numbbbbb/read-vue
 ## Practice
 
 Find the definition of `vm._c`, trace the origin implementation and tell what is returned by executing this function.
-
-
-
