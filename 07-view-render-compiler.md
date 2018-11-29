@@ -106,9 +106,9 @@ export default {
 </script>
 ```
 
-If you write `<template>` tag inside your normal HTML file, Vue will compile it at runtime. If you put it inside `.vue` file, during the building process `vue-template-compiler` will be used to pre-compile it before publishing to the internet.
+Если вы пишете тег `<template>` внутри HTML файла, Vue скомпилирует его в рантайме (в процессе работы). Если вы помещаете его внутрь `.vue` файла, то вовремя процесса сборки (еще до размещения в интернете) будет использован `vue-template-compiler`.
 
-Run `npm run build` to generate the modified Vue project. Copy `package/vue-template-compiler/build.js` to our demo's `node_modules/vue-template-compiler`, then use the modified vue-template-compiler to build it. I got this in my terminal:
+Запустите `npm run build` для генерации измененного проекта. Скопируйте `package/vue-template-compiler/build.js` в на тестовый `node_modules/vue-template-compiler`, и после используйте измененый vue-template-compiler для сборки проекта. Я в консоли получил вот это:
 
 ```javascript
 {
@@ -158,25 +158,25 @@ Run `npm run build` to generate the modified Vue project. Copy `package/vue-temp
 }
 ```
 
-That's the AST parser generates. Easy to understand by both human and machine.
+Это AST, которое сгенерировал парсер. Его легко поймет и человек и компьютер.
 
-After parsing, Vue uses the optimizer to extract static parts. Why? Because static parts won't change, so we can extract them and make render process lighter.
+После парсинга Vue использует оптимизатор для извлечения статических частей. Почему? Потому что статические части не изменяются, так что мы можем их выделить и сделать наш процесс рендеринга легче.
 
-## Optimizer
+## Оптимизатор
 
-Default optimizer located at `compiler/optimizer.js`. It walks through the AST and finds out static parts. Same to the parser, we just treat it as a black box and see the output.
+Стандартный оптимизатор расположен в `compiler/optimizer.js`. Он проходит по AST и находит наши статические части. Как и в случае с парсером - мы будем относиться к нему как к черному ящику и рассмотрим его результат.
 
 ```javascript
 ...
 const ast = parse(template.trim(), options)
-console.log(ast) // <-- ADD THIS LINE
+console.log(ast) // <-- ДОБАВИЛИ СТРОЧКУ
 optimize(ast, options)
-console.log(ast) // <-- ADD THIS LINE
+console.log(ast) // <-- ДОБАВИЛИ СТРОЧКУ
 const code = generate(ast, options)
 ...
 ```
 
-Below is the output of the second `console.log()`:
+Ниже приведен вывод второго вызова `console.log()`:
 
 ```javascript
 {
@@ -232,22 +232,22 @@ Below is the output of the second `console.log()`:
 }
 ```
 
-Compare these two ASTs, you can tell the differences. After optimizing, all nodes in AST are marked with static flags. So where are they used?
+Сравнив эти два AST, вы сможете сказать в чем разница. После оптимизаци, все узлы в AST помечены статическими флагами. А где они используются?
 
-The answer is––
+Ответ –– это
 
-## Generator
+## Генератор
 
-Generator located in `compiler/codegen/index.js`. Again, let's focus on the output.
+Генератор расположен в `compiler/codegen/index.js`. И снова, давайте сосредоточимся на результате работы.
 
 ```javascript
 ...
 const ast = parse(template.trim(), options)
-console.log(ast) // <-- ADD THIS LINE
+console.log(ast) // <-- ДОБАВИЛИ СТРОЧКУ
 optimize(ast, options)
-console.log(ast) // <-- ADD THIS LINE
+console.log(ast) // <-- ДОБАВИЛИ СТРОЧКУ
 const code = generate(ast, options)
-console.log(code) // <-- ADD THIS LINE
+console.log(code) // <-- ДОБАВИЛИ СТРОЧКУ
 ...
 ```
 
@@ -260,26 +260,26 @@ console.log(code) // <-- ADD THIS LINE
 }
 ```
 
-The result is a string `render` and an array `staticRenderFns`. Seems it doesn't generate static render functions for such a simple text node.
+Результат - строчка `render` и массив `staticRenderFns`. Кажется он не сгенерировал статически функции рендера для таких простых текстовых узлов.
 
-`render` is a string, maybe a little surprising but reasonable after you think about it. Compiler works without browser environment, it just accepts a string and output a compiled string.
+`render` - это строка, может быть слегка удивительно, но это разумно, если немного об этом подумать. Компилятор работает без окружение браузера, он просто принимает строчку и выдает скомпилированную строку.
 
-Here are some important points:
+Тут несколько важных моментов:
 
-- `with(this)`. Recall that `render` is used in this line `vnode = render.call(vm._renderProxy, vm.$createElement)`, thus that `this` refers to the component. That's the reason why you can use properties without `this` in template
-- `_c` and `_v`. What's that? After global searching, we can find they are two functions set to `vm._c` and `Vue.prototype._v` during `initRender()`. Why `_c` is set to `vm`? Checkout the comments above that line
-- Notice that the implement of `_c` and `_v` is dynamic based on the platform. But their names are the same in `render`. This is a kind of abstract to make your code more generic
+- `with(this)`. Повторный вызов `render` находится в строчке `vnode = render.call(vm._renderProxy, vm.$createElement)`, так что его `this` ссылается на компонент. Именно поэтому мы можем в шаблоне обращаться к свойствам без `this`.
+- `_c` и `_v`. Что это? После поиска по проекту мы можем найти что это две функции из `vm._c` и `Vue.prototype._v`, задаваемые во время `initRender()`. Почему `_c` находится в `vm` ? Прочитайте комментарии над этой строчкой.
+- Обратите внимание, что реализация `_c` и `_v` динамически зависит от платформы. Но их имена внутри `render` всегда один и те же. Это своего рода асбтракци, чтобы сделать ваш код более общим
 
-Compiler also has a function called `compileToFunction()`, it just converts the string `render` to a function and return.
+Компилятор также имеет функцию с названием `compileToFunction()`, она просто преобразовывает строчку `render` в функцию и возвращает ее.
 
-## Next Step
+## Следующий шаг
 
-Now you know what compiler is, how it compiles template to the final render "function".
+Теперь вы значете, что такое компилятор, как он компилирует шаблон в окончательную функцию ренедера.
 
-In next article, we will turn to the browser and see how Vue uses the generated `render` function and `__patch__()` to update your webpage.
+В следующей статие мы вернемся в браузер и посмотрем как Vue использует сгенерированные функции `render()` и `__patch__()` для обновления страницы.
 
-Read next chapter: [View Rendering - Patch](https://github.com/numbbbbb/read-vue-source-code/blob/master/08-view-render-patch.md).
+Читайте следующую часть: [Ренедеринг View - Patch](https://github.com/vvscode/tr--read-vue-source-code/blob/master/08-view-render-patch.md).
 
-## Practice
+## Практика
 
-Find the definition of `vm._c`, trace the origin implementation and tell what is returned by executing this function.
+Найтите определение `vm._c`, разберите оригинальную реализацию и скажите, что возвращается при выполнении функции.
