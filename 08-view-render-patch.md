@@ -1,4 +1,4 @@
-# Рендеринг View - Patch
+# Рендеринг Представлений - Patch
 
 Этот материал - часть серии [Читая исходный код Vue](https://github.com/numbbbbb/read-vue-source-code).
 

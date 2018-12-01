@@ -1,4 +1,4 @@
-# Рендеринг View - Компилятор
+# Рендеринг - Компилятор
 
 Этот материал - часть серии [Читая исходный код Vue](https://github.com/vvscode/tr--read-vue-source-code).
 
@@ -278,7 +278,7 @@ console.log(code) // <-- ДОБАВИЛИ СТРОЧКУ
 
 В следующей статие мы вернемся в браузер и посмотрем как Vue использует сгенерированные функции `render()` и `__patch__()` для обновления страницы.
 
-Читайте следующую часть: [Ренедеринг View - Patch](https://github.com/vvscode/tr--read-vue-source-code/blob/master/08-view-render-patch.md).
+Читайте следующую часть: [Ренедеринг - Patch](https://github.com/vvscode/tr--read-vue-source-code/blob/master/08-view-render-patch.md).
 
 ## Практика
 

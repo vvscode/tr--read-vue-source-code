@@ -1,4 +1,4 @@
-# Рендеринг View - Введение
+# Рендеринг Представлений - Введение
 
 Эта статья - часть серсии [читая исходный код Vue](https://github.com/vvsdoe/tr--read-vue-source-code).
 
@@ -190,7 +190,7 @@ export const createCompiler = createCompilerCreator(function baseCompile(
 
 Следующие две статьи будут о **compiler** и **patch** - вы увидите, как спроектирован VDom и как быстро просчитывать изменения.
 
-Читайте продолжение : [Рендеринг View - Компилятор](https://github.com/vvscode/tr--read-vue-source-code/blob/master/07-view-render-compiler.md).
+Читайте продолжение : [Рендеринг Представлений - Компилятор](https://github.com/vvscode/tr--read-vue-source-code/blob/master/07-view-render-compiler.md).
 
 ## Практика
 

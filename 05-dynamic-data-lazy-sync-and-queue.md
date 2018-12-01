@@ -261,21 +261,10 @@ export function queueWatcher(watcher: Watcher) {
 Рассмотрим маленький пример:
 
 ```vue
-<div id="app">
-  {{ newName }}
-</div>
+<div id="app">{{ newName }}</div>
 
-var app = new Vue({
-  el: '#app',
-  data: {
-    name: 'foo'
-  },
-  computed: {
-    newName () {
-      return this.name + 'new!'
-    }
-  }
-})
+var app = new Vue({ el: '#app', data: { name: 'foo' }, computed: { newName () {
+return this.name + 'new!' } } })
 ```
 
 В этом примере у нас есть одно свойство и одно вычисляемое свойство. И мы выводим это вычисляемое свойство в шаблоне.
@@ -304,7 +293,7 @@ var app = new Vue({
 
 Мы разобрали три варианта обновления и как поддерживается правильный порядок обновления. Но это все происходит внутри, a как Vue применяет это к обновлению DOM? Как преобразовать ваши `.vue` файлы в код, выполняемый браузером? Следующие несколько статей мы поговорим провесь процесс рендеринга.
 
-В следующей части: [Ввердение в рендеринг View](https://github.com/vvscode/tr--read-vue-source-code/blob/master/06-view-render-introduction.md).
+В следующей части: [Ввердение в рендеринг представлений](https://github.com/vvscode/tr--read-vue-source-code/blob/master/06-view-render-introduction.md).
 
 ## Практика
 
