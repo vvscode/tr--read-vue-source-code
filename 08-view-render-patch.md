@@ -1,39 +1,38 @@
-# View Render - Patch
+# Рендеринг View - Patch
 
-This article belongs to the series [Read Vue Source Code](https://github.com/numbbbbb/read-vue-source-code).
+Этот материал - часть серии [Читая исходный код Vue](https://github.com/numbbbbb/read-vue-source-code).
 
-In this article, we will learn:
+В этой части мы разбере:Ж
 
-- What `render()` returns
-- How `__patch__` updates your webpage
+- Что возвращает `render()`
+- Как `__patch__` обновляет вашу страницу
 
 ![](http://i.imgur.com/9M2VX5F.jpg)
 
-This article will focus on `_update()` part.
+Эта статья сфокусирована на части `_update()`.
 
-## What `render()` Returns
+## Что возвращает `render()`
 
-In [previous article](https://github.com/numbbbbb/read-vue-source-code/blob/master/07-view-render-compiler.md) we have generated the final `render` function, now let's run it and see what is returned:
+В [прошлой части](https://github.com/vvscode/tr--read-vue-source-code/blob/master/07-view-render-compiler.md) мы сгенерировали окончательную функцию `render`. Теперь давайте ее запустим и посмотрим, что она возвращает:
 
 ![](http://i.imgur.com/F91DLpO.jpg)
 
-Modify `core/instance/render.js`, add `console.log` and run `npm run build` to generate the whole Vue bundle.
+Изменим файл `core/instance/render.js`, добавив `console.log`, и запустим `npm run build` чтобы сгенерировать всю библиотеку Vue.
+После сборки скопируем все JS файлы из `dist/` в папку `node_modules/vue/dist` вашего проекта, а потом запустим ваш проект.
 
-After building, copy all JS files from `dist/` to your project's `node_modules/vue/dist/` and build your project.
-
-We use the demo project of the last article again, open it in the browser, open console, you can see.
+Мы снова используем демо проект из прошлого материала, открывает браузер, инструменты разработчика, там в консоли можно увидеть:
 
 ![](http://i.imgur.com/KOk5LgP.jpg)
 
-There are two VNodes. 
+Есть два экземпляра VNodes.
 
-First is the root VNode, it's `child` property refers to the component(click to expand it, you'll see many familiar properties, like `_data`, `_watchers`, `_events` etc).
+Первый - это корневой VNode, его свойство `child` ссылается на компонент (можете кликнуть по нему, чтобы раскрыть, вы увидите много знакомых свойств, вроде `_data`, `_watchers`, `_events` и т.п.).
 
-Second is the `div` VNode, its `parent` property refers to the first VNode. The `children` array contains our text nodes and span nodes.
+Второй - VNode относящийся к `div`. Его свойство `parent` ссылается на первый VNode. Массив `children` содержит наши техтовые узлы и `span`.
 
-Notice there is a `context` property in the second VNode, it refers to the component and is used during render process to get values.
+Обратите внимание, что во втором VNode есть свойство `context`, которое ссылается на компонент, и именно оно используется во время рендеринга для получения значений.
 
-With this clear structure and data in the console, you can understand the implementation of `render()` easily. If you are not interested in details, just remember `render()` gives you the VNodes, with all data injected.
+Видя в консоли такую ясную структуру и данные, вы легко можете представить реализацию `render()` функции. Если не хотите вдаваться в детали, просто запомните, что `render()` возвращает вам объекты VNode, с внедренными данными.
 
 ## How `__patch__()` Updates Your Webpage
 
@@ -41,51 +40,54 @@ Recall this function in `mountComponent`.
 
 ```javascript
 updateComponent = () => {
-  vm._update(vm._render(), hydrating)
-}
+  vm._update(vm._render(), hydrating);
+};
 ```
 
 After executing `vm._render()`, we can go into `vm._update()`.
 
 ```javascript
-Vue.prototype._update = function (vnode: VNode, hydrating?: boolean) {
-  const vm: Component = this
+Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
+  const vm: Component = this;
   if (vm._isMounted) {
-    callHook(vm, 'beforeUpdate')
+    callHook(vm, 'beforeUpdate');
   }
-  const prevEl = vm.$el
-  const prevVnode = vm._vnode
-  const prevActiveInstance = activeInstance
-  activeInstance = vm
-  vm._vnode = vnode
+  const prevEl = vm.$el;
+  const prevVnode = vm._vnode;
+  const prevActiveInstance = activeInstance;
+  activeInstance = vm;
+  vm._vnode = vnode;
   // Vue.prototype.__patch__ is injected in entry points
   // based on the rendering backend used.
   if (!prevVnode) {
     // initial render
     vm.$el = vm.__patch__(
-      vm.$el, vnode, hydrating, false /* removeOnly */,
+      vm.$el,
+      vnode,
+      hydrating,
+      false /* removeOnly */,
       vm.$options._parentElm,
-      vm.$options._refElm
-    )
+      vm.$options._refElm,
+    );
   } else {
     // updates
-    vm.$el = vm.__patch__(prevVnode, vnode)
+    vm.$el = vm.__patch__(prevVnode, vnode);
   }
-  activeInstance = prevActiveInstance
+  activeInstance = prevActiveInstance;
   // update __vue__ reference
   if (prevEl) {
-    prevEl.__vue__ = null
+    prevEl.__vue__ = null;
   }
   if (vm.$el) {
-    vm.$el.__vue__ = vm
+    vm.$el.__vue__ = vm;
   }
   // if parent is an HOC, update its $el as well
   if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
-    vm.$parent.$el = vm.$el
+    vm.$parent.$el = vm.$el;
   }
   // updated hook is called by the scheduler to ensure that children are
   // updated in a parent's updated hook.
-}
+};
 ```
 
 `vm.__patch__()` is the key part. If this is a new node, it will initial the DOM, otherwise, it will update the DOM. Both are implemented inside `vm.__patch__()` with the VNodes we got from `render()`.
@@ -95,28 +97,32 @@ Now use the skills you learn from previous articles to find the definition of `_
 Trace `nodeOps` and `modules`, you can find `nodeOps` are real DOM operations, like these:
 
 ```javascript
-export function createElementNS (namespace: string, tagName: string): Element {
-  return document.createElementNS(namespaceMap[namespace], tagName)
+export function createElementNS(namespace: string, tagName: string): Element {
+  return document.createElementNS(namespaceMap[namespace], tagName);
 }
 
-export function createTextNode (text: string): Text {
-  return document.createTextNode(text)
+export function createTextNode(text: string): Text {
+  return document.createTextNode(text);
 }
 
-export function createComment (text: string): Comment {
-  return document.createComment(text)
+export function createComment(text: string): Comment {
+  return document.createComment(text);
 }
 
-export function insertBefore (parentNode: Node, newNode: Node, referenceNode: Node) {
-  parentNode.insertBefore(newNode, referenceNode)
+export function insertBefore(
+  parentNode: Node,
+  newNode: Node,
+  referenceNode: Node,
+) {
+  parentNode.insertBefore(newNode, referenceNode);
 }
 
-export function removeChild (node: Node, child: Node) {
-  node.removeChild(child)
+export function removeChild(node: Node, child: Node) {
+  node.removeChild(child);
 }
 
-export function appendChild (node: Node, child: Node) {
-  node.appendChild(child)
+export function appendChild(node: Node, child: Node) {
+  node.appendChild(child);
 }
 ```
 
@@ -128,7 +134,7 @@ Up to now, we have looked through `_render()`, `parser`, `optimizer`, `generater
 
 ## How to Update DOM FAST
 
-We have old VNodes, new VNodes, and tools to modify DOM, but how to update it fast? 
+We have old VNodes, new VNodes, and tools to modify DOM, but how to update it fast?
 
 Or you can ask from another side: how to make Vue faster than other frameworks? DOM operation is the most time-consuming part, so in order to beat other frameworks, Vue must have some algorithms here to speed it up.
 
@@ -145,51 +151,53 @@ The core function of `update` is `patchVnode()`.
 Implement of `patchVnode()`:
 
 ```javascript
-function patchVnode (oldVnode, vnode, insertedVnodeQueue, removeOnly) {
+function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) {
   if (oldVnode === vnode) {
-    return
+    return;
   }
   // reuse element for static trees.
   // note we only do this if the vnode is cloned -
   // if the new node is not cloned it means the render functions have been
   // reset by the hot-reload-api and we need to do a proper re-render.
-  if (isTrue(vnode.isStatic) &&
+  if (
+    isTrue(vnode.isStatic) &&
     isTrue(oldVnode.isStatic) &&
     vnode.key === oldVnode.key &&
     (isTrue(vnode.isCloned) || isTrue(vnode.isOnce))
   ) {
-    vnode.elm = oldVnode.elm
-    vnode.componentInstance = oldVnode.componentInstance
-    return
+    vnode.elm = oldVnode.elm;
+    vnode.componentInstance = oldVnode.componentInstance;
+    return;
   }
-  let i
-  const data = vnode.data
-  if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
-    i(oldVnode, vnode)
+  let i;
+  const data = vnode.data;
+  if (isDef(data) && isDef((i = data.hook)) && isDef((i = i.prepatch))) {
+    i(oldVnode, vnode);
   }
-  const elm = vnode.elm = oldVnode.elm
-  const oldCh = oldVnode.children
-  const ch = vnode.children
+  const elm = (vnode.elm = oldVnode.elm);
+  const oldCh = oldVnode.children;
+  const ch = vnode.children;
   if (isDef(data) && isPatchable(vnode)) {
-    for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
-    if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
+    for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode);
+    if (isDef((i = data.hook)) && isDef((i = i.update))) i(oldVnode, vnode);
   }
   if (isUndef(vnode.text)) {
     if (isDef(oldCh) && isDef(ch)) {
-      if (oldCh !== ch) updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)
+      if (oldCh !== ch)
+        updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly);
     } else if (isDef(ch)) {
-      if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '')
-      addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)
+      if (isDef(oldVnode.text)) nodeOps.setTextContent(elm, '');
+      addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue);
     } else if (isDef(oldCh)) {
-      removeVnodes(elm, oldCh, 0, oldCh.length - 1)
+      removeVnodes(elm, oldCh, 0, oldCh.length - 1);
     } else if (isDef(oldVnode.text)) {
-      nodeOps.setTextContent(elm, '')
+      nodeOps.setTextContent(elm, '');
     }
   } else if (oldVnode.text !== vnode.text) {
-    nodeOps.setTextContent(elm, vnode.text)
+    nodeOps.setTextContent(elm, vnode.text);
   }
   if (isDef(data)) {
-    if (isDef(i = data.hook) && isDef(i = i.postpatch)) i(oldVnode, vnode)
+    if (isDef((i = data.hook)) && isDef((i = i.postpatch))) i(oldVnode, vnode);
   }
 }
 ```
@@ -250,5 +258,3 @@ Read next chapter: [Conclusion](https://github.com/numbbbbb/read-vue-source-code
 Continue simulating the execution of `updateChildren()` until you really understand it.
 
 What would you implement the update operation? Compare it to `updateChildren()` and see why Vue is faster.
-
-
