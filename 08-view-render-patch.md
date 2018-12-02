@@ -34,9 +34,9 @@
 
 Видя в консоли такую ясную структуру и данные, вы легко можете представить реализацию `render()` функции. Если не хотите вдаваться в детали, просто запомните, что `render()` возвращает вам объекты VNode, с внедренными данными.
 
-## How `__patch__()` Updates Your Webpage
+## Как `__patch__()` обновляет вашу страницу
 
-Recall this function in `mountComponent`.
+Повторный вызов функции внутри `mountComponent`.
 
 ```javascript
 updateComponent = () => {
@@ -44,7 +44,7 @@ updateComponent = () => {
 };
 ```
 
-After executing `vm._render()`, we can go into `vm._update()`.
+После выполнения `vm._render()`, мы можем перейти к `vm._update()`.
 
 ```javascript
 Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
@@ -57,10 +57,10 @@ Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
   const prevActiveInstance = activeInstance;
   activeInstance = vm;
   vm._vnode = vnode;
-  // Vue.prototype.__patch__ is injected in entry points
-  // based on the rendering backend used.
+  // Vue.prototype.__patch__ создан в точке входа
+  // позволяет обрабатывать серверный рендеринг.
   if (!prevVnode) {
-    // initial render
+    // первый рендеринг
     vm.$el = vm.__patch__(
       vm.$el,
       vnode,
@@ -70,31 +70,30 @@ Vue.prototype._update = function(vnode: VNode, hydrating?: boolean) {
       vm.$options._refElm,
     );
   } else {
-    // updates
+    // обновления
     vm.$el = vm.__patch__(prevVnode, vnode);
   }
   activeInstance = prevActiveInstance;
-  // update __vue__ reference
+  // обновляем ссылку  __vue__
   if (prevEl) {
     prevEl.__vue__ = null;
   }
   if (vm.$el) {
     vm.$el.__vue__ = vm;
   }
-  // if parent is an HOC, update its $el as well
+  // Если родитель - это  HOC, тогда заодно обновим его $el
   if (vm.$vnode && vm.$parent && vm.$vnode === vm.$parent._vnode) {
     vm.$parent.$el = vm.$el;
   }
-  // updated hook is called by the scheduler to ensure that children are
-  // updated in a parent's updated hook.
+  // хуки обновления вызываются планировщиком, чтобы обеспечить обновление дочерних узлов
+  // в хуке обновления родительского элемента
 };
 ```
 
-`vm.__patch__()` is the key part. If this is a new node, it will initial the DOM, otherwise, it will update the DOM. Both are implemented inside `vm.__patch__()` with the VNodes we got from `render()`.
+`vm.__patch__()` - это ключевой момент. Если это новый узел - мы создадим DOM, иначе мы обновим DOM. И то и другое реализовано внутри `vm.__patch__()` с VNode, которые мы получаем из `render()`.
+Теперь воспользуемся тем, чему мы нвучились в прошлый раз, чтобы найти определение `__patch__()`. Оно расположено в `platforms/web/runtime/patch.js` и создается с помощью `createPatchFunction({ nodeOps, modules })`.
 
-Now use the skills you learn from previous articles to find the definition of `__patch__()`. It's located in `platforms/web/runtime/patch.js`, created by `createPatchFunction({ nodeOps, modules })`.
-
-Trace `nodeOps` and `modules`, you can find `nodeOps` are real DOM operations, like these:
+Пробежавшись по `nodeOps` и `modules`, вы обнаружите, что `nodeOps` - операции работы с DOM, вроде следующих:
 
 ```javascript
 export function createElementNS(namespace: string, tagName: string): Element {
@@ -126,13 +125,13 @@ export function appendChild(node: Node, child: Node) {
 }
 ```
 
-`modules` are operations related to DOM node, like `setAttr`, `updateClass`, `updateStyle`.
+`modules` - это фукнции для работы с DOM узлами, вроде `setAttr`, `updateClass`, `updateStyle`.
 
-Here the important thing is that `__patch__()` is dynamic and platform specific. No need to explain, it's the same pattern we have saw in Vue's core implementation.
+Тут важно, что `__patch__()` - динамическая фукнция, которая зависит от платформы. Нет необходимости объяснять, мы уже видели такой же подход в реализации ядра Vue.
 
-Up to now, we have looked through `_render()`, `parser`, `optimizer`, `generater`, `_update()`, `__patch__()`, `nodeOps` and `modules`. Is that all about render process? Absolutely not, we missed an important part.
+До сих пор мы просматривали `_render()`, `parser`, `optimizer`, `generater`, `_update()`, `__patch__()`, `nodeOps` и `modules`. Неужто это все, что относится к процессу рендеринга? Вовсе нет, мы пропустили важный элемент.
 
-## How to Update DOM FAST
+## Как БЫСТРО обновлять DOM
 
 We have old VNodes, new VNodes, and tools to modify DOM, but how to update it fast?
 
