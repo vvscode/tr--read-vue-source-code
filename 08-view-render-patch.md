@@ -133,31 +133,32 @@ export function appendChild(node: Node, child: Node) {
 
 ## Как БЫСТРО обновлять DOM
 
-We have old VNodes, new VNodes, and tools to modify DOM, but how to update it fast?
+У нас есть старые VNode, новые VNode и набор функция для обновления DOM. Но как сделать обновление быстрым?
 
-Or you can ask from another side: how to make Vue faster than other frameworks? DOM operation is the most time-consuming part, so in order to beat other frameworks, Vue must have some algorithms here to speed it up.
+Или задать вопрос по-другому: как сделать Vue быстрее, чем другие фреймворки? Операции с DOM - самая времязатратная часть, поэтому чтобы обогнать другие фреймворки, Vue должен иметь какой-то алгорим для ускорения процесса.
 
-And yes, it has.
+И да, такой алгоритм есть.
 
-Open `core/vdom/patch.js`, read the top comments, we learn Vue's DOM patching algorithm is implemented based on Snabbdom.
+Откройте файл `core/vdom/patch.js`, прочитайте комментарии в шапке, мы разберем алгоритм обновления DOM, реализация которого основана на (Snabbdom)[https://github.com/snabbdom/snabbdom].
 
-After reading `createPatchFunction()` and `patch()` inside it, we find that `patch()` can do both `mount()` and `update()`. `mount()` is easy, just generate the DOM based on VNodes, we should focus on `update()`.
+Прочитав `createPatchFunction()` и `patch()` внутри нее, мы обнаружим, что `patch()` может делать и `mount()` и `update()`. `mount()` - это легко, просто сгенерировать DOM по описанию из VNode, так что разберем `update()`.
 
-The core function of `update` is `patchVnode()`.
+Основаня фукнция `update` - это `patchVnode()`.
 
 ![](http://i.imgur.com/CKxi6L6.jpg)
 
-Implement of `patchVnode()`:
+Часть `patchVnode()`:
 
 ```javascript
 function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) {
   if (oldVnode === vnode) {
     return;
   }
-  // reuse element for static trees.
-  // note we only do this if the vnode is cloned -
-  // if the new node is not cloned it means the render functions have been
-  // reset by the hot-reload-api and we need to do a proper re-render.
+  // переиспользуем элементы для статических деревьев
+  // Обратите внимаие - мы делаем это, только если vnode склоинрован
+  // если новый узел не является клоном, это значит что фукнция рендера
+  // была сброшена с помощью hot-reload-api (перезагрузки на лету) и мы должны выполнить
+  // актуальный пере-рендеринг
   if (
     isTrue(vnode.isStatic) &&
     isTrue(oldVnode.isStatic) &&
@@ -201,13 +202,13 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) {
 }
 ```
 
-Here is the real patch part.
+Вот вам кусок настоящего патча.
 
-The outmost `if` clause checks if vnode has text. If it has, then it must be a leaf node, and if the text changes, just call `nodeOps.setTextContent()`.
+Последняя ветка `if` проверяет содержит ли vnode текст. Если да - она должна быть крайним узлом (листом дерева), так что мы просто вызовем `nodeOps.setTextContent()`.
 
-If vnode doesn't have text, it means we have to deal with its children, go into the outmost `if` clause.
+Если vnode не содержит текст, это значит что нам нужно обработать дочерние элементы (смотрим предыдущую ветку).
 
-Here we meet four `if-else` clauses:
+Тут мы видим 4 ветки `if-else`:
 
 - if the old node and new node both have children and they are not equal: call `updateChildren()`
 - if only the new node has children: if old node has text, remove the text; call `addVnodes()` to add new node's children
@@ -244,16 +245,15 @@ I won't list all possibilities here, you can play it as long as you like until y
 
 In my opinion, this algorithm is not complex. The core thought is "reuse". Only create new Vnodes when all other methods are failed. Updating is easier and faster than creating and inserting.
 
-## Next Step
+## Следующий шаг
 
-Congratulations! You have walked though almost all important parts of Vue. Entry, initialization process, observer, watcher, dep, parser, optimizer, generator, Vnode, patch. You know the initialization order, the way to build dynamic data net, how template is compiled to a function and how to patch the DOM efficiently.
+Поздравляю! Вы прошли почти по всем важным частям Vue. Точка входа, процесс инициализации, наблюдатели, зависимости, парсер, оптимизатор, генератор, Vnode, патч. Вы знаеме порядок инициализации, как строится сеть изменяемых данных, как шаблон компилируется в функцию и как эффективно обновлять DOM.
 
-So what's next? Check it out by yourself.
+Что дальше? Смотрите сами.
 
-Read next chapter: [Conclusion](https://github.com/numbbbbb/read-vue-source-code/blob/master/09-conclusion.md).
+Читайте следующий материал: [Заключение](https://github.com/vvscode/tr--read-vue-source-code/blob/master/09-conclusion.md).
 
-## Practice
+## Практика
 
-Continue simulating the execution of `updateChildren()` until you really understand it.
-
-What would you implement the update operation? Compare it to `updateChildren()` and see why Vue is faster.
+Продолжайте прокручивать в голове выполнение `updateChildren`, пока полностью ее не поймете.
+Как бы вы реализовали операции обновления? Сравните с `updateChildren()` по посмотрите, почему Vue быстрее.
