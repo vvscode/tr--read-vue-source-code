@@ -210,40 +210,40 @@ function patchVnode(oldVnode, vnode, insertedVnodeQueue, removeOnly) {
 
 Тут мы видим 4 ветки `if-else`:
 
-- if the old node and new node both have children and they are not equal: call `updateChildren()`
-- if only the new node has children: if old node has text, remove the text; call `addVnodes()` to add new node's children
-- if only old node has children: it means new node is empty, just call `removeVnodes()` to remove the old node
-- if old node and new node both doesn't have children AND old node has text: if you go into this clause, it means new node doesn't has text(otherwise the outside if will fall into the `else` clause), so just call `setTextContent()` to remove the text
+- если и старый узел и новый имеют дочерние элементы, и они не эквивалентны - вызвать `updateChildren()`
+- если только новый узел имеет дочерние элементы и старый узел содержит текст - удалить текст, вызвать `addVnodes()` для добавления узлу дочерних элементов
+- если только старый узел содержит дочерние элементы, значит новый узел пустой - просто вызовем `removeVnodes()` для удаление старого узал
+- если ни старый ни новый узлы не содержат дочерних элементов, И старый узел содержит текст - если вы попали в эту ветку, значит новый узел не содержит текст (иначе бы внешний `if` провалился в ветку `else`) - так что просто вызовем `setTextContent()` для удаления текста
 
-Feel free to pause and think for a while before going on.
+Можете спокойно остановиться и подумать, прежде чем продолжать.
 
-Next go to `updateChildren()`. It seems scared long, but don't worry, it's not such difficult to understand.
+Дальше перейдем к `updateChildren()`. Она пугающе длинная, но не стоит беспокоиться, ее не так уж и сложно понять.
 
-Now pick up a pencil and a piece of paper.
+Возьмем ручку и карандаш.
 
-First, we have two arrays, `oldCh` and `Ch`:
+Для начала, у нас есть два массива, `oldCh` и `Ch`:
 
 ![](http://i.imgur.com/4yanODV.jpg)
 
-Each blue and green block represents a VNode in the array.
+Каждый синий и зеленый блок представляет VNode в массиве.
 
-Then add variables.
+Добавим переменные
 
 ![](http://i.imgur.com/EfdVdaU.jpg)
 
-Okay, now simulate the execution in your mind.
+Вот, теперь можно подумать о порядке выполнения.
 
-- `while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {`, read from your paper, yes it's `true`.
-- `if (isUndef(oldStartVnode)) {`, here you can fill in different Vnode to see how this function works, I want my old start Vnode and old end Vnode to be both defined
-- `} else if (sameVnode(oldStartVnode, newStartVnode)) {`, here check whether old start Vnode is new start Vnode. Umm, let's try `true` first. Then it calls our familiar function `patchVnode` to update the DOM and, hey it updates variables
+- `while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {`, читаем с листика, да - это `true`.
+- `if (isUndef(oldStartVnode)) {`, тут мы можем подставлять разные Vnode, чтобы посмотреть как фукнция работает. Я хочу чтобы и старый и новый узел были определены
+- `} else if (sameVnode(oldStartVnode, newStartVnode)) {`, тут проверяем начинаются ли деревья с одного и того же узла. Для начала предположим, что результат `true`. Тогда вызывается уже знакомая фукнция `patchVnode` для обновления DOM, и заодно обновятся переменные
 
 ![](http://i.imgur.com/88FigaR.jpg)
 
-We have updated those two start Vnodes! Okay, go back to `while` and go on with your paper.
+Мы обновили эти корневые узлы. Дальше возвращаемся к `while` и продолжаем по бумажке.
 
-I won't list all possibilities here, you can play it as long as you like until you really understand `updateChildren`.
+Я не стану перечислять все возможные варианты, мы сами можете поиграться с этим, пока полностью не поймете `updateChildren`.
 
-In my opinion, this algorithm is not complex. The core thought is "reuse". Only create new Vnodes when all other methods are failed. Updating is easier and faster than creating and inserting.
+По-моему этот алгоритм не сложный. Ключевая мысль - переиспользование. Только при создании новых Vnode все проверки провалятся. Обновление проще и быстрее, чем создание и вставка.
 
 ## Следующий шаг
 
